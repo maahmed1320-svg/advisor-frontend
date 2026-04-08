@@ -2,11 +2,11 @@ import { useState } from 'react'
 import s from './Login.module.css'
 
 const HINT_IDS = [
-  'S001 — Mariam Al-Hashimi (CSE · sem 4)',
-  'S002 — Yousef Al-Mansoori (CSE · sem 7)',
-  'S003 — Khalid Al-Blooshi (CEN · sem 3)',
-  'S004 — Noura Al-Shamsi (CEN · sem 6)',
-  'S005 — Ahmed Al-Kaabi (SWE · sem 5)',
+  'S001 — Student 1',
+  'S002 — Student 2',
+  'S003 — Student 3',
+  'S004 — Student 4',
+  'S005 — Student 5',
 ]
 
 export default function Login({ onLogin, loading, error }) {
