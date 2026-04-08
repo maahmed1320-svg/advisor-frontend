@@ -281,7 +281,6 @@ export default function Chains({ chains }) {
         {[
           ['#111','#111','#fff','Done'],
           ['#fff','#111','#111','In progress'],
-          ['#fff','#c00','#c00','At risk'],
           ['#fff','#777','#444','Available'],
           ['#fff','#ddd','#bbb','Locked'],
         ].map(([fill,stroke,text,label]) => (
