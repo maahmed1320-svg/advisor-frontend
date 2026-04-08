@@ -4,7 +4,6 @@ import s from './Chains.module.css'
 const STATE_COLOR = {
   completed:           { fill:'#111', stroke:'#111', text:'#fff' },
   in_progress:         { fill:'#fff', stroke:'#111', text:'#111' },
-  in_progress_at_risk: { fill:'#fff', stroke:'#c00', text:'#c00' },
   available:           { fill:'#fff', stroke:'#777', text:'#444' },
   locked:              { fill:'#fff', stroke:'#ddd', text:'#bbb' },
 }
