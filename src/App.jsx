@@ -167,7 +167,7 @@ export default function App() {
 
           <section className={s.section}>
             <div className={s.colHd} style={{cursor:'pointer'}} onClick={()=>setCurrentOpen(o=>!o)}>
-              Current — {currentSem==='spring'?'Spring 2026':'Fall 2026'}
+              Current — {currentSem==='spring'?'Fall 2026':'Spring 2026'}
               <span className={s.hdCount}>{currentOpen?'▲':'▼'}</span>
             </div>
             {currentOpen && (
