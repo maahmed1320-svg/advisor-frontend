@@ -7,11 +7,12 @@ const HINT_IDS = [
   'S003 — Student 3',
   'S004 — Student 4',
   'S005 — Student 5',
+  "********* No need for password or Auth for now *********"
 ]
 
 export default function Login({ onLogin, loading, error }) {
-  const [id, setId]   = useState('')
-  const [pw, setPw]   = useState('')
+  const [id, setId] = useState('')
+  const [pw, setPw] = useState('')
 
   function submit(e) {
     e.preventDefault()
@@ -21,6 +22,7 @@ export default function Login({ onLogin, loading, error }) {
   return (
     <div className={s.wrap}>
       <div className={s.wordmark}>Academic Advising System</div>
+
       <form className={s.card} onSubmit={submit}>
         <h1 className={s.heading}>Student Portal</h1>
         <p className={s.sub}>Sign in with your student ID</p>
@@ -57,6 +59,10 @@ export default function Login({ onLogin, loading, error }) {
           {HINT_IDS.map(h => <span key={h}>{h}</span>)}
         </div>
       </form>
+
+      <p className={s.footer}>
+        Done by Ahmed Yahya and Muaaz Ahmed — All rights reserved
+      </p>
     </div>
   )
 }
