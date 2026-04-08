@@ -1,0 +1,85 @@
+.list { display:flex; flex-direction:column; gap:8px; }
+
+.card {
+  border: 0.5px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.12s;
+  position: relative;
+}
+.card:hover:not(.blocked):not(.inCart) { background: var(--gray-50, #f7f5f0); }
+.inCart  { border-color: var(--black); border-width: 1px; }
+.blocked { opacity: 0.38; pointer-events: none; border-style: dashed; }
+
+.check {
+  position: absolute;
+  top: 9px; right: 11px;
+  font-size: 16px;
+  color: var(--black);
+}
+
+.cardMain  { padding-right: 20px; }
+.cardName  { font-size: 16px; font-style: italic; line-height: 1.3; }
+.cardMeta  { font-size: 16px; color: var(--gray-400); margin-top: 2px; letter-spacing: 0.02em; }
+.instructor{ font-size: 17px; color: var(--gray-500); margin-top: 3px; font-style: italic; }
+.schedule  { font-size: 16px; color: var(--gray-400); margin-top: 2px; letter-spacing: 0.03em; }
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 7px;
+}
+.tag {
+  font-size: 15px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 0.5px solid transparent;
+}
+.tagUrgent { background: var(--black); color: var(--white); }
+.tagSem    { border-color: var(--gray-300); color: var(--gray-500); }
+.tagElec   { border-color: var(--gray-300); color: var(--gray-400); }
+.tagCart   { background: var(--black); color: var(--white); }
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--gray-200);
+  flex-shrink: 0;
+}
+.dotFilled { background: var(--black); }
+
+.scoreVal {
+  font-size: 15px;
+  color: var(--gray-400);
+  margin-left: 5px;
+  letter-spacing: 0.04em;
+}
+
+.unlocks {
+  font-size: 16px;
+  color: var(--gray-400);
+}
+
+.empty {
+  font-size: 15px;
+  color: var(--gray-400);
+  text-align: center;
+  padding: 2rem 0;
+  font-style: italic;
+}

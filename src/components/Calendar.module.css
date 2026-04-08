@@ -1,0 +1,130 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cal {
+  display: flex;
+  height: 640px;
+  border: 0.5px solid var(--gray-200);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* Time gutter */
+.gutter {
+  width: 36px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 0.5px solid var(--gray-200);
+}
+.gutterTop {
+  height: 26px;
+  flex-shrink: 0;
+  border-bottom: 0.5px solid var(--gray-200);
+}
+.gutterCell {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 2px 4px 0 0;
+  font-size: 15px;
+  color: var(--gray-300);
+  border-top: 0.5px solid var(--gray-100);
+  white-space: nowrap;
+}
+
+/* Day columns */
+.dayCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-left: 0.5px solid var(--gray-100);
+  min-width: 0;
+}
+.dayCol:first-of-type { border-left: none; }
+
+.dayHd {
+  height: 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  border-bottom: 0.5px solid var(--gray-200);
+  background: var(--gray-50, #f7f5f0);
+}
+
+.dayBody {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.hourLine {
+  position: absolute;
+  left: 0; right: 0;
+  border-top: 0.5px solid var(--gray-200);
+  pointer-events: none;
+}
+.halfLine {
+  position: absolute;
+  left: 0; right: 0;
+  border-top: 0.5px dashed var(--gray-100);
+  pointer-events: none;
+}
+
+/* Course blocks */
+.block {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  border: 1px solid;
+  border-radius: 3px;
+  padding: 3px 5px;
+  overflow: hidden;
+  box-sizing: border-box;
+  z-index: 2;
+}
+
+.bCode {
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bName {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.2;
+  margin-top: 1px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.bInst {
+  font-size: 15px;
+  opacity: 0.6;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-style: italic;
+}
+
+.empty {
+  font-size: 17px;
+  color: var(--gray-400);
+  text-align: center;
+  padding: 1.5rem 0;
+  font-style: italic;
+}

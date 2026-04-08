@@ -1,0 +1,68 @@
+.wrap { display: flex; flex-direction: column; }
+
+.row {
+  padding: 10px 0;
+  border-bottom: var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.row:last-child { border-bottom: none; }
+
+.top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.name { font-size: 16px; font-weight: normal; font-style: italic; }
+.meta { font-size: 16px; color: var(--gray-400); margin-top: 1px; letter-spacing: 0.02em; }
+
+.toggle {
+  display: flex;
+  border: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.btn {
+  font-size: 16px;
+  padding: 3px 10px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--gray-400);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.btn:hover { background: var(--gray-50); }
+
+.passActive {
+  background: var(--black) !important;
+  color: var(--white) !important;
+}
+
+.failActive {
+  background: var(--red) !important;
+  color: var(--white) !important;
+}
+
+.barWrap {
+  height: 3px;
+  background: var(--gray-100);
+  border-radius: 2px;
+}
+
+.barFill {
+  height: 3px;
+  border-radius: 2px;
+  transition: width 0.3s, background 0.3s;
+}
+
+.predLabel {
+  font-size: 16px;
+  color: var(--gray-400);
+  letter-spacing: 0.02em;
+}

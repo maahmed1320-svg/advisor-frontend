@@ -1,0 +1,112 @@
+.page { display:flex; flex-direction:column; height:100%; overflow:hidden; background:#fff; }
+
+/* Top bar */
+.topbar {
+  display:flex; align-items:center; gap:12px;
+  padding:8px 16px; border-bottom:1px solid #ddd;
+  flex-shrink:0; background:#f7f5f0; flex-wrap:wrap;
+}
+.backBtn {
+  font-size:17px; padding:5px 12px; border:0.5px solid #bbb;
+  border-radius:5px; background:#fff; cursor:pointer; color:#555; white-space:nowrap;
+}
+.backBtn:hover { background:#eee; }
+.title { font-size:17px; font-weight:500; color:#111; }
+.subtitle { font-size:17px; color:#999; }
+.conflictPill {
+  font-size:16px; padding:3px 10px; border-radius:99px;
+  background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; white-space:nowrap;
+}
+.submitBtn {
+  font-size:17px; padding:8px 20px; background:#111;
+  color:#fff; border:none; border-radius:5px; cursor:pointer; white-space:nowrap;
+}
+.submitBtn:hover:not(:disabled) { background:#333; }
+.submitBtn:disabled { opacity:0.5; cursor:default; }
+.submitBtnDisabled { background:#dc2626 !important; }
+
+/* Error banner */
+.errorBanner {
+  padding:10px 16px; background:#fee2e2; color:#7f1d1d;
+  font-size:15px; border-bottom:1px solid #fca5a5; flex-shrink:0;
+}
+
+/* Body */
+.body { display:grid; grid-template-columns:280px 1fr; flex:1; min-height:0; overflow:hidden; }
+
+/* Left list */
+.listCol { border-right:1px solid #ddd; overflow-y:auto; }
+.empty { padding:20px 16px; font-size:17px; color:#999; font-style:italic; line-height:1.8; }
+
+.item { display:flex; border-bottom:0.5px solid #eee; }
+.item:hover { background:#fafaf8; }
+.itemConflict { background:#fff8f8 !important; }
+.colorBar { width:4px; flex-shrink:0; }
+.itemBody { padding:10px 12px; flex:1; min-width:0; }
+.itemTop { display:flex; align-items:center; gap:6px; margin-bottom:2px; flex-wrap:wrap; }
+.itemCode { font-size:16px; font-family:monospace; color:#777; }
+.itemCr   { font-size:16px; color:#aaa; }
+.conflictTag { font-size:15px; color:#b91c1c; background:#fee2e2; padding:1px 6px; border-radius:99px; }
+.removeBtn {
+  margin-left:auto; font-size:16px; padding:2px 8px;
+  border:0.5px solid #ccc; border-radius:4px;
+  background:transparent; cursor:pointer; color:#777;
+}
+.removeBtn:hover { border-color:#c00; color:#c00; }
+.itemName { font-size:15px; font-style:italic; color:#111; margin-bottom:3px; }
+.itemSec  { display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:16px; color:#777; }
+.secBadge { font-size:15px; padding:1px 5px; border-radius:3px; background:#eee; color:#555; font-family:monospace; }
+.itemInst { font-size:16px; color:#999; font-style:italic; margin-top:2px; }
+
+/* Right grid */
+.gridCol { display:flex; flex-direction:column; overflow:hidden; }
+.gridTitle { font-size:16px; letter-spacing:0.12em; text-transform:uppercase; color:#aaa; padding:10px 14px 6px; flex-shrink:0; }
+.gridEmpty { padding:12px 14px; font-size:17px; color:#999; font-style:italic; }
+.gridWrap { flex:1; overflow:auto; padding:0 12px 12px; }
+
+/* Grid */
+.grid { display:flex; min-height:560px; width:100%; }
+
+.gutter { width:36px; flex-shrink:0; display:flex; flex-direction:column; }
+.gutterTop { height:26px; flex-shrink:0; }
+.gutterCell {
+  flex:1; min-height:0;
+  display:flex; align-items:flex-start; justify-content:flex-end;
+  padding:2px 5px 0 0; font-size:15px; color:#ccc;
+  border-top:0.5px solid #eee; white-space:nowrap;
+}
+
+.dayCol { flex:1; display:flex; flex-direction:column; border-left:0.5px solid #eee; min-width:0; }
+.dayHd {
+  height:26px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  font-size:15px; letter-spacing:0.1em; color:#aaa;
+  border-bottom:0.5px solid #ddd; background:#f7f5f0;
+}
+.dayBody {
+  flex:1; position:relative; overflow:hidden;
+}
+
+.hourLine {
+  position:absolute; left:0; right:0;
+  border-top:0.5px solid #eee; pointer-events:none; z-index:0;
+}
+.halfLine {
+  position:absolute; left:0; right:0;
+  border-top:0.5px dashed #f0ede4; pointer-events:none; z-index:0;
+}
+
+/* Course block */
+.block {
+  position:absolute; left:3px; right:3px;
+  border:1px solid; border-radius:4px;
+  padding:3px 5px; overflow:hidden;
+  box-sizing:border-box; z-index:2;
+  transition:box-shadow 0.1s;
+}
+.blockConflict {
+  border-width:2px !important;
+  box-shadow:0 0 0 1px #fca5a5;
+}
+.bCode { font-size:15px; opacity:0.65; letter-spacing:0.03em; white-space:nowrap; }
+.bName { font-size:15px; font-weight:500; line-height:1.2; margin-top:1px; overflow:hidden; }
+.bConflictLabel { font-size:15px; margin-top:2px; opacity:0.8; }

@@ -1,0 +1,52 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+.hint {
+  font-size: 15px;
+  color: var(--gray-300, #ccc);
+  font-style: italic;
+  letter-spacing: 0.03em;
+  padding: 2px 0;
+}
+
+.hoverInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  padding: 3px 0;
+  min-height: 18px;
+}
+.hoveredCode {
+  font-family: monospace;
+  font-weight: 600;
+  color: #d97706;
+  background: #fef3c7;
+  padding: 1px 7px;
+  border-radius: 99px;
+  font-size: 16px;
+}
+.prereqList {
+  color: var(--gray-400, #999);
+  font-size: 16px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 0.5px solid var(--gray-100, #eee);
+  font-size: 16px;
+  color: var(--gray-400, #999);
+}
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
