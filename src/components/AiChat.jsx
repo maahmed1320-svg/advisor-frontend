@@ -12,9 +12,9 @@ Here is the student's current academic profile (names are kept private for priva
 ACADEMIC STATUS:
 - Major: ${student.major}
 - Current Semester: ${student.semester}
-- GPA: ${student.gpa} (trend: ${student.gpaTrend >= 0 ? '+' : ''}${student.gpaTrend} this semester)
-- Earned Credits: ${student.earnedCredits} / ${student.requiredCredits} required
-- Credits Remaining: ${student.requiredCredits - student.earnedCredits}
+- GPA: ${student.gpa} (trend: ${(student.gpaTrend ?? 0) >= 0 ? '+' : ''}${student.gpaTrend ?? 0} this semester)
+- Earned Credits: ${student.earnedCredits ?? 0} / ${student.requiredCredits ?? 130} required
+- Credits Remaining: ${(student.requiredCredits ?? 130) - (student.earnedCredits ?? 0)}
 
 CURRENTLY ENROLLED (${inProgress.length} courses):
 ${inProgress.map(c => `- ${c.code}: ${c.name}`).join('\n') || '- None'}
@@ -40,6 +40,8 @@ function renderText(text) {
 }
 
 export default function AiChat({ student, inProgress, completed, recommendations }) {
+  if (!student || !inProgress || !completed || !recommendations) return null
+
   const [open,     setOpen]     = useState(false)
   const [messages, setMessages] = useState([])
   const [input,    setInput]    = useState('')
@@ -53,6 +55,7 @@ export default function AiChat({ student, inProgress, completed, recommendations
   useEffect(() => {
     if (open && messages.length === 0) {
       const available = recommendations.filter(r => r.prereqsMet && !r.isBlocked)
+      const atRisk    = inProgress.filter(c => !c.passFail)
       setMessages([{ role: 'assistant', content:
         `Hi! I'm your academic advisor assistant. I can see your full profile — Semester ${student.semester} of ${student.major}, GPA ${student.gpa}, ${student.earnedCredits} credits completed.\n\nYou have **${available.length} courses available** to enroll in this semester.${atRisk.length > 0 ? `\n\n⚠️ **${atRisk.length} course${atRisk.length>1?'s are':' is'} at risk** — let's talk about that.` : ''}\n\nHow can I help you today?`
       }])
@@ -81,7 +84,7 @@ export default function AiChat({ student, inProgress, completed, recommendations
       if (!res.ok) throw new Error(data.error || 'API error')
       setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${e.message}. Make sure ANTHROPIC_API_KEY is set in Railway backend variables.` }])
+      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${e.message}. Make sure OPENAI_API_KEY is set in Railway backend variables.` }])
     } finally { setLoading(false) }
   }
 

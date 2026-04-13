@@ -4,10 +4,10 @@ import s from './Login.module.css'
 const HINT_IDS = [
   'S001 — Student 1',
   'S002 — Student 2',
-  'S003 — Student 3',
+  'S003 — Ahmed Yahya',
   'S004 — Student 4',
   'S005 — Student 5',
-  "********* No need for password or Auth for now *********"
+  "** No need for password or Auth for now **"
 ]
 
 export default function Login({ onLogin, loading, error }) {
@@ -61,7 +61,7 @@ export default function Login({ onLogin, loading, error }) {
       </form>
 
       <p className={s.footer}>
-        Done by Ahmed Yahya and Muaaz Ahmed — All rights reserved
+        Done by Muaaz Ahmed & Ahmed Yahya .. proof of concept 
       </p>
     </div>
   )
