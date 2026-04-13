@@ -108,6 +108,17 @@ function getAncestorEdges(code, parentsMap) {
   return edges
 }
 
+// Returns which ancestor nodes are reachable ONLY via co-req edges from the hovered node
+function getCoReqAncestors(code, parentsMap, coReqEdges) {
+  const coReqParents = new Set()
+  for (const parent of (parentsMap[code] || [])) {
+    if (coReqEdges.has(`${parent}->${code}`)) {
+      coReqParents.add(parent)
+    }
+  }
+  return coReqParents
+}
+
 export default function Chains({ chains, coReqEdges: coReqEdgeList }) {
   const [hovered, setHovered] = useState(null)
 
@@ -121,13 +132,15 @@ export default function Chains({ chains, coReqEdges: coReqEdgeList }) {
     () => assignPositions(layer, childrenMap, parentsMap), [layer, childrenMap, parentsMap]
   )
 
-  const { hlNodes, hlEdges } = useMemo(() => {
-    if (!hovered) return { hlNodes: null, hlEdges: null }
+  const { hlNodes, hlEdges, coReqHlNodes } = useMemo(() => {
+    if (!hovered) return { hlNodes: null, hlEdges: null, coReqHlNodes: null }
     const hlNodes = getAncestors(hovered, parentsMap)
     hlNodes.add(hovered)
     const hlEdges = getAncestorEdges(hovered, parentsMap)
-    return { hlNodes, hlEdges }
-  }, [hovered, parentsMap])
+    // Direct co-req parents of hovered node
+    const coReqHlNodes = getCoReqAncestors(hovered, parentsMap, coReqEdges)
+    return { hlNodes, hlEdges, coReqHlNodes }
+  }, [hovered, parentsMap, coReqEdges])
 
   const isAnyHovered = !!hovered
   const maxRows = Math.max(...Object.values(byLayer).map(a => a.length))
@@ -182,8 +195,12 @@ export default function Chains({ chains, coReqEdges: coReqEdgeList }) {
           const isCoreq  = coReqEdges.has(edgeKey)
 
           let stroke, strokeW, dash, marker
+          const isCoReqHlEdge = hlEdges?.has(edgeKey) && coReqEdges.has(edgeKey)
+
           if (isDim) {
             stroke='#eee'; strokeW=0.6; dash='none'; marker='url(#arr-dim)'
+          } else if (isCoReqHlEdge) {
+            stroke='#6366f1'; strokeW=2; dash='5 3'; marker='url(#arr-coreq)'
           } else if (isHl && isMultiP) {
             stroke='#ef4444'; strokeW=2; dash='none'; marker='url(#arr-hlm)'
           } else if (isHl) {
@@ -232,14 +249,17 @@ export default function Chains({ chains, coReqEdges: coReqEdgeList }) {
           let strokeW = isMultiP ? 1.5 : 0.8
           let opacity = 1
 
-          if (isDim)        { opacity = 0.15 }
-          else if (isHover) { fill='#f59e0b'; stroke='#d97706'; text='#fff'; strokeW=2 }
-          else if (isHl)    { stroke='#f59e0b'; strokeW=1.8 }
-          // Co-req nodes get indigo tint when not hovered/dimmed
-          if (!isDim && !isHover && isNodeCoReq) {
-            fill   = fill === '#111' ? '#111' : '#eef2ff'   // keep completed black, tint others
-            stroke = stroke === '#111' ? '#111' : '#6366f1'  // keep completed border, indigo others
-            text   = text === '#fff' ? '#fff' : '#4338ca'    // keep completed white text, indigo others
+          const isCoReqParent = coReqHlNodes?.has(code)
+
+          if (isDim)              { opacity = 0.15 }
+          else if (isHover)       { fill='#f59e0b'; stroke='#d97706'; text='#fff'; strokeW=2 }
+          else if (isCoReqParent) { fill='#6366f1'; stroke='#4338ca'; text='#fff'; strokeW=2 }
+          else if (isHl)          { stroke='#f59e0b'; strokeW=1.8 }
+          // Co-req nodes get indigo tint when not hovered/highlighted
+          else if (isNodeCoReq) {
+            fill   = fill === '#111' ? '#111' : '#eef2ff'
+            stroke = stroke === '#111' ? '#111' : '#6366f1'
+            text   = text === '#fff' ? '#fff' : '#4338ca'
           }
 
           const label = code
