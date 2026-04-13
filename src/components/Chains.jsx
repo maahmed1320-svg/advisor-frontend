@@ -1,40 +1,56 @@
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState } from 'react'
 import s from './Chains.module.css'
 
 const STATE_COLOR = {
   completed:           { fill:'#111', stroke:'#111', text:'#fff' },
   in_progress:         { fill:'#fff', stroke:'#111', text:'#111' },
+  in_progress_at_risk: { fill:'#fff', stroke:'#c00', text:'#c00' },
   available:           { fill:'#fff', stroke:'#777', text:'#444' },
   locked:              { fill:'#fff', stroke:'#ddd', text:'#bbb' },
 }
 
-const NODE_W   = 120
-const NODE_H   = 40
-const COL_W    = 156
-const ROW_H    = 62
+const NODE_W = 120
+const NODE_H = 40
+const COL_W  = 156
+const ROW_H  = 62
+
+// Strip co-req marker (*) from code
+function cleanCode(code) { return code.replace(/\*$/, '') }
+function isCoReq(code)   { return code.endsWith('*') }
 
 function buildGraph(chains) {
   const stateMap    = {}
   const childrenMap = {}
   const parentsMap  = {}
+  const coReqEdges  = new Set() // "parent->child" keys that are co-reqs
 
   for (const chain of chains) {
     for (let i = 0; i < chain.length; i++) {
-      const { code, state } = chain[i]
+      const raw   = chain[i].code
+      const code  = cleanCode(raw)
+      const state = chain[i].state
       stateMap[code] = state
+
       if (i < chain.length - 1) {
-        const childCode = chain[i + 1].code
+        const rawChild  = chain[i + 1].code
+        const childCode = cleanCode(rawChild)
+
         if (!childrenMap[code])     childrenMap[code]     = new Set()
         if (!parentsMap[childCode]) parentsMap[childCode] = new Set()
         childrenMap[code].add(childCode)
         parentsMap[childCode].add(code)
+
+        // If current node was marked * OR the child is marked *, it's a co-req edge
+        if (isCoReq(raw) || isCoReq(rawChild)) {
+          coReqEdges.add(`${code}->${childCode}`)
+        }
       }
     }
   }
 
-  const allCodes = new Set(chains.flat().map(n => n.code))
+  const allCodes = new Set(chains.flat().map(n => cleanCode(n.code)))
   const roots    = [...allCodes].filter(c => !parentsMap[c])
-  return { stateMap, childrenMap, parentsMap, roots }
+  return { stateMap, childrenMap, parentsMap, roots, coReqEdges }
 }
 
 function assignLayers(roots, childrenMap, parentsMap) {
@@ -75,7 +91,6 @@ function assignPositions(layer, childrenMap, parentsMap) {
   return { pos, byLayer, maxLayer }
 }
 
-// Get all ancestors of a node (for highlight)
 function getAncestors(code, parentsMap) {
   const visited = new Set()
   const queue   = [code]
@@ -88,7 +103,6 @@ function getAncestors(code, parentsMap) {
   return visited
 }
 
-// Get all ancestor EDGES
 function getAncestorEdges(code, parentsMap) {
   const nodes = getAncestors(code, parentsMap)
   const edges = new Set()
@@ -103,7 +117,7 @@ function getAncestorEdges(code, parentsMap) {
 export default function Chains({ chains }) {
   const [hovered, setHovered] = useState(null)
 
-  const { stateMap, childrenMap, parentsMap, roots } = useMemo(
+  const { stateMap, childrenMap, parentsMap, roots, coReqEdges } = useMemo(
     () => buildGraph(chains), [chains]
   )
   const layer = useMemo(
@@ -113,7 +127,6 @@ export default function Chains({ chains }) {
     () => assignPositions(layer, childrenMap, parentsMap), [layer, childrenMap, parentsMap]
   )
 
-  // On hover: compute highlighted nodes + edges
   const { hlNodes, hlEdges } = useMemo(() => {
     if (!hovered) return { hlNodes: null, hlEdges: null }
     const hlNodes = getAncestors(hovered, parentsMap)
@@ -123,7 +136,6 @@ export default function Chains({ chains }) {
   }, [hovered, parentsMap])
 
   const isAnyHovered = !!hovered
-
   const maxRows = Math.max(...Object.values(byLayer).map(a => a.length))
   const svgW    = (maxLayer + 1) * COL_W + NODE_W + 20
   const svgH    = maxRows * ROW_H + NODE_H + 20
@@ -146,10 +158,10 @@ export default function Chains({ chains }) {
         style={{ overflow:'visible', display:'block', cursor:'default' }}
       >
         <defs>
-          {/* Arrow markers for all states */}
           {[
             ['arr-dim',      '#eee'],
             ['arr-normal',   '#ccc'],
+            ['arr-coreq',    '#6366f1'],  // indigo for co-req
             ['arr-hl',       '#f59e0b'],
             ['arr-hl-merge', '#ef4444'],
           ].map(([id, color]) => (
@@ -168,10 +180,11 @@ export default function Chains({ chains }) {
           const x2 = cx(to)   - NODE_W / 2 - 3
           const y2 = cy(to)
 
-          const edgeKey     = `${from}->${to}`
-          const isHl        = hlEdges?.has(edgeKey)
-          const isMultiP    = (parentsMap[to]?.size ?? 0) > 1
-          const isDim       = isAnyHovered && !isHl
+          const edgeKey  = `${from}->${to}`
+          const isHl     = hlEdges?.has(edgeKey)
+          const isMultiP = (parentsMap[to]?.size ?? 0) > 1
+          const isDim    = isAnyHovered && !isHl
+          const isCoreq  = coReqEdges.has(edgeKey)
 
           let stroke, strokeW, dash, marker
           if (isDim) {
@@ -180,6 +193,8 @@ export default function Chains({ chains }) {
             stroke = '#ef4444'; strokeW = 2; dash = 'none'; marker = 'url(#arr-hl-merge)'
           } else if (isHl) {
             stroke = '#f59e0b'; strokeW = 2; dash = 'none'; marker = 'url(#arr-hl)'
+          } else if (isCoreq) {
+            stroke = '#6366f1'; strokeW = 1.2; dash = '4 3'; marker = 'url(#arr-coreq)'
           } else {
             stroke = '#ccc'; strokeW = 0.8
             dash   = isMultiP ? '3 2' : 'none'
@@ -198,7 +213,7 @@ export default function Chains({ chains }) {
             <path key={edgeKey} d={d} fill="none"
               stroke={stroke} strokeWidth={strokeW}
               strokeDasharray={dash} markerEnd={marker}
-              style={{ transition:'stroke 0.15s, stroke-width 0.15s, opacity 0.15s' }}
+              style={{ transition:'stroke 0.15s, opacity 0.15s' }}
             />
           )
         })}
@@ -215,23 +230,18 @@ export default function Chains({ chains }) {
           const x = cx(code) - NODE_W / 2
           const y = cy(code) - NODE_H / 2
 
-          // Override colors when highlighted
-          let fill   = c.fill
-          let stroke = c.stroke
-          let text   = c.text
+          let fill    = c.fill
+          let stroke  = c.stroke
+          let text    = c.text
           let strokeW = isMultiP ? 1.5 : 0.8
           let opacity = 1
 
-          if (isDim) {
-            opacity = 0.2
-          } else if (isHover) {
-            fill = '#f59e0b'; stroke = '#d97706'; text = '#fff'; strokeW = 2
-          } else if (isHl) {
-            // ancestor — keep original color but brighten border
-            stroke = '#f59e0b'; strokeW = 1.8
-          }
+          if (isDim)       { opacity = 0.2 }
+          else if (isHover){ fill='#f59e0b'; stroke='#d97706'; text='#fff'; strokeW=2 }
+          else if (isHl)   { stroke='#f59e0b'; strokeW=1.8 }
 
-          const label = code.replace('_CSE','').replace('_SWE','').replace('_CEN','')
+          const label = code
+            .replace('_CSE','').replace('_SWE','').replace('_CEN','')
 
           return (
             <g key={code}
@@ -258,7 +268,6 @@ export default function Chains({ chains }) {
         })}
       </svg>
 
-      {/* Hover hint */}
       {!hovered && (
         <div className={s.hint}>Hover a course to highlight its prerequisite chain</div>
       )}
@@ -293,11 +302,17 @@ export default function Chains({ chains }) {
           </span>
         ))}
         <span className={s.legendItem}>
-          <svg width="24" height="14" viewBox="0 0 24 14">
-            <rect x="1" y="1" width="22" height="12" rx="6"
-              fill="#fff" stroke="#777" strokeWidth="1.5" strokeDasharray="4 2"/>
+          <svg width="30" height="14" viewBox="0 0 30 14">
+            <line x1="2" y1="7" x2="28" y2="7" stroke="#ccc" strokeWidth="1.5"/>
           </svg>
-          Needs 2+ prereqs
+          Prerequisite
+        </span>
+        <span className={s.legendItem}>
+          <svg width="30" height="14" viewBox="0 0 30 14">
+            <line x1="2" y1="7" x2="28" y2="7" stroke="#6366f1"
+              strokeWidth="1.5" strokeDasharray="4 3"/>
+          </svg>
+          Co-requisite
         </span>
       </div>
     </div>
