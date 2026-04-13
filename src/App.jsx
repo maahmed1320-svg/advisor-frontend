@@ -84,7 +84,7 @@ export default function App() {
     return (
       <div className={s.shell}>
         <header className={s.topbar}>
-          <div className={s.brand}>Student's name</div>
+          <div className={s.brand}>Advisor</div>
           <div className={s.studentName}>{student.name}</div>
           <div className={s.majorPill}>{student.major}</div>
           <div style={{marginLeft:'auto'}} />
@@ -114,7 +114,7 @@ export default function App() {
 
       {/* Top bar */}
       <header className={s.topbar}>
-        <div className={s.brand}>Student's name</div>
+        <div className={s.brand}>Advisor</div>
         <div className={s.studentName}>{student.name}</div>
         <div className={`${s.majorPill} ${s.hideOnMobile}`}>{student.major}</div>
         <div className={s.semToggle}>
@@ -167,7 +167,7 @@ export default function App() {
 
           <section className={s.section}>
             <div className={s.colHd} style={{cursor:'pointer'}} onClick={()=>setCurrentOpen(o=>!o)}>
-              Current — {currentSem==='spring'?'Fall 2026':'Spring 2026'}
+              Current — {currentSem==='spring'?'Spring 2026':'Fall 2026'}
               <span className={s.hdCount}>{currentOpen?'▲':'▼'}</span>
             </div>
             {currentOpen && (
@@ -184,7 +184,7 @@ export default function App() {
             </div>
             {chainsOpen && (
               <div className={`${s.colBody} ${s.scrollable}`}>
-                <Chains chains={chains} />
+                <Chains chains={chains} coReqEdges={data.coReqEdges || []} />
               </div>
             )}
           </section>

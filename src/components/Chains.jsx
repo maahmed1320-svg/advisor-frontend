@@ -7,7 +7,7 @@ const STATE_COLOR = {
   in_progress_at_risk: { fill:'#fff', stroke:'#c00', text:'#c00' },
   available:           { fill:'#fff', stroke:'#777', text:'#444' },
   locked:              { fill:'#fff', stroke:'#ddd', text:'#bbb' },
-  placeholder:         { fill:'#f5f5f5', stroke:'#e0e0e0', text:'#aaa' },
+  placeholder:         { fill:'#f8f8f8', stroke:'#e0e0e0', text:'#bbb' },
 }
 
 const NODE_W = 120
@@ -15,48 +15,34 @@ const NODE_H = 40
 const COL_W  = 156
 const ROW_H  = 62
 
-// Strip co-req marker (*) from code
-function cleanCode(code) { return code.replace(/\*$/, '') }
-function isCoReq(code)   { return code.endsWith('*') }
-
-function buildGraph(chains) {
+function buildGraph(chains, coReqEdgeList) {
   const stateMap    = {}
   const childrenMap = {}
   const parentsMap  = {}
-  const coReqEdges  = new Set() // "parent->child" keys that are co-reqs
+  const coReqEdges  = new Set(coReqEdgeList || [])
 
   for (const chain of chains) {
     for (let i = 0; i < chain.length; i++) {
-      const raw   = chain[i].code
-      const code  = cleanCode(raw)
-      const state = chain[i].state
+      const { code, state } = chain[i]
       stateMap[code] = state
-
       if (i < chain.length - 1) {
-        const rawChild  = chain[i + 1].code
-        const childCode = cleanCode(rawChild)
-
+        const childCode = chain[i + 1].code
         if (!childrenMap[code])     childrenMap[code]     = new Set()
         if (!parentsMap[childCode]) parentsMap[childCode] = new Set()
         childrenMap[code].add(childCode)
         parentsMap[childCode].add(code)
-
-        // If current node was marked * OR the child is marked *, it's a co-req edge
-        if (isCoReq(raw) || isCoReq(rawChild)) {
-          coReqEdges.add(`${code}->${childCode}`)
-        }
       }
     }
   }
 
-  // Track nodes that have at least one co-req edge coming IN
+  // Which nodes have at least one co-req edge coming IN
   const coReqNodes = new Set()
   for (const edge of coReqEdges) {
     const child = edge.split('->')[1]
     coReqNodes.add(child)
   }
 
-  const allCodes = new Set(chains.flat().map(n => cleanCode(n.code)))
+  const allCodes = new Set(chains.flat().map(n => n.code))
   const roots    = [...allCodes].filter(c => !parentsMap[c])
   return { stateMap, childrenMap, parentsMap, roots, coReqEdges, coReqNodes }
 }
@@ -122,11 +108,11 @@ function getAncestorEdges(code, parentsMap) {
   return edges
 }
 
-export default function Chains({ chains }) {
+export default function Chains({ chains, coReqEdges: coReqEdgeList }) {
   const [hovered, setHovered] = useState(null)
 
   const { stateMap, childrenMap, parentsMap, roots, coReqEdges, coReqNodes } = useMemo(
-    () => buildGraph(chains), [chains]
+    () => buildGraph(chains, coReqEdgeList), [chains, coReqEdgeList]
   )
   const layer = useMemo(
     () => assignLayers(roots, childrenMap, parentsMap), [roots, childrenMap, parentsMap]
@@ -167,11 +153,11 @@ export default function Chains({ chains }) {
       >
         <defs>
           {[
-            ['arr-dim',      '#eee'],
-            ['arr-normal',   '#ccc'],
-            ['arr-coreq',    '#6366f1'],  // indigo for co-req
-            ['arr-hl',       '#f59e0b'],
-            ['arr-hl-merge', '#ef4444'],
+            ['arr-dim',    '#eee'],
+            ['arr-normal', '#ccc'],
+            ['arr-coreq',  '#6366f1'],
+            ['arr-hl',     '#f59e0b'],
+            ['arr-hlm',    '#ef4444'],
           ].map(([id, color]) => (
             <marker key={id} id={id} viewBox="0 0 10 10" refX="9" refY="5"
               markerWidth="5" markerHeight="5" orient="auto-start-reverse">
@@ -196,17 +182,17 @@ export default function Chains({ chains }) {
 
           let stroke, strokeW, dash, marker
           if (isDim) {
-            stroke = '#eee'; strokeW = 0.6; dash = 'none'; marker = 'url(#arr-dim)'
+            stroke='#eee'; strokeW=0.6; dash='none'; marker='url(#arr-dim)'
           } else if (isHl && isMultiP) {
-            stroke = '#ef4444'; strokeW = 2; dash = 'none'; marker = 'url(#arr-hl-merge)'
+            stroke='#ef4444'; strokeW=2; dash='none'; marker='url(#arr-hlm)'
           } else if (isHl) {
-            stroke = '#f59e0b'; strokeW = 2; dash = 'none'; marker = 'url(#arr-hl)'
+            stroke='#f59e0b'; strokeW=2; dash='none'; marker='url(#arr-hl)'
           } else if (isCoreq) {
-            stroke = '#6366f1'; strokeW = 1.2; dash = '4 3'; marker = 'url(#arr-coreq)'
+            stroke='#6366f1'; strokeW=1.4; dash='5 3'; marker='url(#arr-coreq)'
           } else {
-            stroke = '#ccc'; strokeW = 0.8
-            dash   = isMultiP ? '3 2' : 'none'
-            marker = 'url(#arr-normal)'
+            stroke='#ccc'; strokeW=0.8
+            dash=isMultiP ? '3 2' : 'none'
+            marker='url(#arr-normal)'
           }
 
           let d
@@ -234,6 +220,7 @@ export default function Chains({ chains }) {
           const isDim    = isAnyHovered && !isHl
           const isHover  = code === hovered
           const isMultiP = (parentsMap[code]?.size ?? 0) > 1
+          const isNodeCoReq = coReqNodes.has(code)
 
           const x = cx(code) - NODE_W / 2
           const y = cy(code) - NODE_H / 2
@@ -244,13 +231,12 @@ export default function Chains({ chains }) {
           let strokeW = isMultiP ? 1.5 : 0.8
           let opacity = 1
 
-          if (isDim)       { opacity = 0.2 }
-          else if (isHover){ fill='#f59e0b'; stroke='#d97706'; text='#fff'; strokeW=2 }
-          else if (isHl)   { stroke='#f59e0b'; strokeW=1.8 }
+          if (isDim)        { opacity = 0.15 }
+          else if (isHover) { fill='#f59e0b'; stroke='#d97706'; text='#fff'; strokeW=2 }
+          else if (isHl)    { stroke='#f59e0b'; strokeW=1.8 }
 
           const label = code
             .replace('_CSE','').replace('_SWE','').replace('_CEN','')
-          const isNodeCoReq = coReqNodes.has(code)
 
           return (
             <g key={code}
@@ -272,16 +258,12 @@ export default function Chains({ chains }) {
               >
                 {label}
               </text>
-              {/* Small indigo diamond badge for co-req nodes */}
+              {/* Indigo dot on top-right for co-req nodes */}
               {isNodeCoReq && !isDim && (
-                <g transform={`translate(${x + NODE_W - 6}, ${y})`}>
-                  <circle cx="0" cy="0" r="6"
-                    fill="#6366f1" stroke="#fff" strokeWidth="1.5"/>
-                  <text x="0" y="0" textAnchor="middle" dominantBaseline="central"
-                    fontSize="8" fill="#fff" style={{pointerEvents:'none',userSelect:'none',fontWeight:'bold'}}>
-                    C
-                  </text>
-                </g>
+                <circle
+                  cx={x + NODE_W - 4} cy={y + 4} r={5}
+                  fill="#6366f1" stroke="#fff" strokeWidth="1.5"
+                />
               )}
             </g>
           )
@@ -295,7 +277,7 @@ export default function Chains({ chains }) {
         <div className={s.hoverInfo}>
           <span className={s.hoveredCode}>{hovered}</span>
           {coReqNodes.has(hovered) && (
-            <span className={s.coReqBadge}>co-req</span>
+            <span className={s.coReqBadge}>co-requisite</span>
           )}
           {parentsMap[hovered]?.size > 0 && (
             <span className={s.prereqList}>
@@ -308,14 +290,14 @@ export default function Chains({ chains }) {
         </div>
       )}
 
-      {/* Legend */}
       <div className={s.legend}>
         {[
-          ['#111','#111','#fff','Done'],
-          ['#fff','#111','#111','In progress'],
-          ['#fff','#777','#444','Available'],
-          ['#fff','#ddd','#bbb','Locked'],
-        ].map(([fill,stroke,text,label]) => (
+          ['#111','#111','Done'],
+          ['#fff','#111','In progress'],
+          ['#fff','#c00','At risk'],
+          ['#fff','#777','Available'],
+          ['#fff','#ddd','Locked'],
+        ].map(([fill,stroke,label]) => (
           <span key={label} className={s.legendItem}>
             <svg width="24" height="14" viewBox="0 0 24 14">
               <rect x="1" y="1" width="22" height="12" rx="6"
@@ -325,17 +307,23 @@ export default function Chains({ chains }) {
           </span>
         ))}
         <span className={s.legendItem}>
-          <svg width="30" height="14" viewBox="0 0 30 14">
-            <line x1="2" y1="7" x2="28" y2="7" stroke="#ccc" strokeWidth="1.5"/>
+          <svg width="32" height="14" viewBox="0 0 32 14">
+            <line x1="2" y1="7" x2="30" y2="7" stroke="#ccc" strokeWidth="1.5" markerEnd="url(#arr-normal)"/>
           </svg>
           Prerequisite
         </span>
         <span className={s.legendItem}>
-          <svg width="30" height="14" viewBox="0 0 30 14">
-            <line x1="2" y1="7" x2="28" y2="7" stroke="#6366f1"
-              strokeWidth="1.5" strokeDasharray="4 3"/>
+          <svg width="32" height="14" viewBox="0 0 32 14">
+            <line x1="2" y1="7" x2="30" y2="7" stroke="#6366f1"
+              strokeWidth="1.5" strokeDasharray="5 3"/>
           </svg>
           Co-requisite
+        </span>
+        <span className={s.legendItem}>
+          <svg width="14" height="14" viewBox="0 0 14 14">
+            <circle cx="7" cy="7" r="5" fill="#6366f1"/>
+          </svg>
+          Has co-req
         </span>
       </div>
     </div>
