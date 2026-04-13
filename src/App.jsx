@@ -129,7 +129,6 @@ export default function App() {
       <header className={s.topbar}>
         <div className={s.brand}>Student's Name</div>
         <div className={s.studentName}>{student.name}</div>
-        <div className={`${s.majorPill} ${s.hideOnMobile}`}>{student.major}</div>
         <div className={s.semToggle}>
           <span className={`${s.semLabel} ${s.hideOnMobile}`}>Sem:</span>
           <div className={s.semBtns}>
