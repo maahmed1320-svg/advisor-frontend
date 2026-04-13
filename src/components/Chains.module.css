@@ -1,9 +1,15 @@
 .wrap {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
   overflow-x: auto;
-  padding: 4px 0;
+  overflow-y: visible;
+  padding: 4px 0 12px;
+  min-width: 0;
+}
+
+.wrap svg {
+  min-width: max-content;
 }
 
 .hint {

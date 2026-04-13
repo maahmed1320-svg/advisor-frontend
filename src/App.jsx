@@ -84,14 +84,14 @@ export default function App() {
     return (
       <div className={s.shell}>
         <header className={s.topbar}>
-          <div className={s.brand}>Advisor</div>
-          <div className={s.studentName}>{student.name}</div>
+          <div className={s.brand}>Prerequisite Chains</div>
+          <div className={s.studentName}>{student.name} — {student.major}</div>
           <div style={{marginLeft:'auto'}} />
           <button className={s.logoutBtn} onClick={() => setShowChains(false)}>
             ← Back
           </button>
         </header>
-        <div style={{flex:1, overflow:'auto', padding:'1.2rem'}}>
+        <div style={{flex:1, overflow:'auto', padding:'1.5rem 1.5rem 2rem'}}>
           <Chains chains={chains} coReqEdges={data.coReqEdges || []} />
         </div>
       </div>

@@ -10,10 +10,10 @@ const STATE_COLOR = {
   placeholder:         { fill:'#f8f8f8', stroke:'#e0e0e0', text:'#bbb' },
 }
 
-const NODE_W = 120
-const NODE_H = 40
-const COL_W  = 156
-const ROW_H  = 62
+const NODE_W = 100
+const NODE_H = 34
+const COL_W  = 130
+const ROW_H  = 52
 
 function buildGraph(chains, coReqEdgeList) {
   const stateMap    = {}
@@ -147,9 +147,10 @@ export default function Chains({ chains, coReqEdges: coReqEdgeList }) {
   return (
     <div className={s.wrap}>
       <svg
-        width="100%"
+        width={svgW}
+        height={svgH}
         viewBox={`0 0 ${svgW} ${svgH}`}
-        style={{ overflow:'visible', display:'block', cursor:'default' }}
+        style={{ overflow:'visible', display:'block', cursor:'default', minWidth: svgW }}
       >
         <defs>
           {[
@@ -253,7 +254,7 @@ export default function Chains({ chains, coReqEdges: coReqEdgeList }) {
               />
               <text x={cx(code)} y={cy(code)}
                 textAnchor="middle" dominantBaseline="central"
-                fontSize="17" fontFamily="monospace" fill={text}
+                fontSize="13" fontFamily="monospace" fill={text}
                 style={{ pointerEvents:'none', userSelect:'none' }}
               >
                 {label}
@@ -261,7 +262,7 @@ export default function Chains({ chains, coReqEdges: coReqEdgeList }) {
               {/* Indigo dot on top-right for co-req nodes */}
               {isNodeCoReq && !isDim && (
                 <circle
-                  cx={x + NODE_W - 4} cy={y + 4} r={5}
+                  cx={x + NODE_W - 3} cy={y + 3} r={4}
                   fill="#6366f1" stroke="#fff" strokeWidth="1.5"
                 />
               )}
