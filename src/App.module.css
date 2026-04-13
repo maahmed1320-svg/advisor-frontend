@@ -122,22 +122,29 @@
   flex-shrink: 0;
 }
 
-/* ── 3-col grid ── */
+/* ── 2-col layout ── */
 .cols {
   display: grid;
-  grid-template-columns: var(--col1-width, 1fr) 1fr 1fr;
+  grid-template-columns: 220px 1fr;
   grid-template-rows: 1fr;
   flex: 1;
   min-height: 0;
 }
 
-.col {
+.sideCol {
   border-right: 0.5px solid var(--gray-200);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  width: 220px;
 }
-.col:last-child { border-right: none; }
+
+.mainCol {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
 
 .section {
   display: flex;
@@ -275,4 +282,32 @@
   .statLabel { font-size: 9px; }
   .statVal   { font-size: 16px; }
   .statSub   { font-size: 10px; }
+}
+
+/* ── Chains button in topbar ── */
+.chainsBtn {
+  font-size: 16px;
+  color: var(--gray-400);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0 1.1rem;
+  height: 100%;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  border-left: 0.5px solid var(--gray-200);
+  white-space: nowrap;
+}
+.chainsBtn:hover { color: var(--black); background: var(--gray-50); }
+
+/* Mobile tweaks */
+@media (max-width: 768px) {
+  .cols {
+    grid-template-columns: 1fr !important;
+  }
+  .sideCol {
+    width: 100% !important;
+    max-height: 35vh;
+    overflow-y: auto;
+  }
 }

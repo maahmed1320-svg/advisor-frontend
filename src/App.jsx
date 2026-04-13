@@ -17,10 +17,10 @@ export default function App() {
   const [error,         setError]         = useState(null)
   const [studentId,     setStudentId]     = useState(null)
   const [currentSem,    setCurrentSem]    = useState('spring')
-  const [chainsOpen,    setChainsOpen]    = useState(false)
   const [currentOpen,   setCurrentOpen]   = useState(true)
   const [completedOpen, setCompletedOpen] = useState(false)
   const [showCart,      setShowCart]      = useState(false)
+  const [showChains,    setShowChains]    = useState(false)
 
   async function loadStudent(id, ov = {}, sem = currentSem) {
     try {
@@ -68,7 +68,7 @@ export default function App() {
 
   function handleLogout() {
     setData(null); setStudentId(null); setOverrides({})
-    setCartItems([]); setError(null); setShowCart(false)
+    setCartItems([]); setError(null); setShowCart(false); setShowChains(false)
   }
 
   if (!data) return <Login onLogin={handleLogin} loading={loading} error={error} />
@@ -79,14 +79,32 @@ export default function App() {
     .map(code => recommendations.find(r => r.code === code)?.name ?? code)
     .slice(0, 5)
 
-  // Full-page cart view
+  // ── Chains full-screen overlay ────────────────────────────
+  if (showChains) {
+    return (
+      <div className={s.shell}>
+        <header className={s.topbar}>
+          <div className={s.brand}>Advisor</div>
+          <div className={s.studentName}>{student.name}</div>
+          <div style={{marginLeft:'auto'}} />
+          <button className={s.logoutBtn} onClick={() => setShowChains(false)}>
+            ← Back
+          </button>
+        </header>
+        <div style={{flex:1, overflow:'auto', padding:'1.2rem'}}>
+          <Chains chains={chains} coReqEdges={data.coReqEdges || []} />
+        </div>
+      </div>
+    )
+  }
+
+  // ── Cart full-screen ──────────────────────────────────────
   if (showCart) {
     return (
       <div className={s.shell}>
         <header className={s.topbar}>
           <div className={s.brand}>Advisor</div>
           <div className={s.studentName}>{student.name}</div>
-          <div className={s.majorPill}>{student.major}</div>
           <div style={{marginLeft:'auto'}} />
           <button onClick={handleLogout} className={s.logoutBtn}>Sign out</button>
         </header>
@@ -99,20 +117,15 @@ export default function App() {
             onSubmitted={() => { setCartItems([]); setShowCart(false) }}
           />
         </div>
-        <AiChat
-          student={student}
-          inProgress={inProgress}
-          completed={completed}
-          recommendations={recommendations}
-        />
+        <AiChat student={student} inProgress={inProgress} completed={completed} recommendations={recommendations} />
       </div>
     )
   }
 
+  // ── Main view ─────────────────────────────────────────────
   return (
     <div className={s.shell}>
 
-      {/* Top bar */}
       <header className={s.topbar}>
         <div className={s.brand}>Advisor</div>
         <div className={s.studentName}>{student.name}</div>
@@ -124,6 +137,10 @@ export default function App() {
             <button className={`${s.semBtn} ${currentSem==='fall'?s.semActive:''}`}   onClick={()=>handleSemesterToggle('fall')}>Fall</button>
           </div>
         </div>
+        {/* Chains button */}
+        <button className={s.chainsBtn} onClick={() => setShowChains(true)}>
+          🔗 Chains
+        </button>
         <button
           className={`${s.cartBtn} ${cartItems.length > 0 ? s.cartBtnActive : ''}`}
           onClick={() => setShowCart(true)}
@@ -133,7 +150,6 @@ export default function App() {
         <button onClick={handleLogout} className={s.logoutBtn}>Sign out</button>
       </header>
 
-      {/* Stats */}
       <div className={s.stats}>
         {[
           { label:'GPA',       value: student.gpa.toFixed(2), sub: (student.gpaTrend>=0?'↑':'↓')+' '+Math.abs(student.gpaTrend).toFixed(1)+' this sem' },
@@ -149,7 +165,6 @@ export default function App() {
         ))}
       </div>
 
-      {/* Cascade warning */}
       {cascadeNames.length > 0 && (
         <div className={s.cascadeWarn}>
           Failing: {cascadeNames.join(', ')}
@@ -157,13 +172,11 @@ export default function App() {
         </div>
       )}
 
-      {/* Main layout */}
-      <div className={s.cols} style={{
-        '--col1-width': (!currentOpen && !chainsOpen && !completedOpen) ? '180px' : '1fr'
-      }}>
+      {/* 2-col layout: narrow sidebar + wide browser */}
+      <div className={s.cols}>
 
-        {/* Col 1 — sidebar */}
-        <div className={s.col}>
+        {/* Col 1 — narrow sidebar */}
+        <div className={s.sideCol}>
 
           <section className={s.section}>
             <div className={s.colHd} style={{cursor:'pointer'}} onClick={()=>setCurrentOpen(o=>!o)}>
@@ -173,18 +186,6 @@ export default function App() {
             {currentOpen && (
               <div className={s.colBody}>
                 <CurrentCourses courses={inProgress} overrides={overrides} onToggle={handleToggle} />
-              </div>
-            )}
-          </section>
-
-          <section className={s.section} style={chainsOpen?{flex:1,overflow:'hidden'}:{}}>
-            <div className={s.colHd} style={{cursor:'pointer'}} onClick={()=>setChainsOpen(o=>!o)}>
-              Prerequisite chains
-              <span className={s.hdCount}>{chainsOpen?'▲ collapse':'▼ expand'}</span>
-            </div>
-            {chainsOpen && (
-              <div className={`${s.colBody} ${s.scrollable}`}>
-                <Chains chains={chains} coReqEdges={data.coReqEdges || []} />
               </div>
             )}
           </section>
@@ -202,8 +203,8 @@ export default function App() {
 
         </div>
 
-        {/* Col 2+3 — course browser */}
-        <div className={s.col} style={{gridColumn:'2/4'}}>
+        {/* Col 2 — course browser */}
+        <div className={s.mainCol}>
           <CourseBrowser
             recommendations={recommendations}
             cart={cartItems}
@@ -214,13 +215,7 @@ export default function App() {
 
       </div>
 
-      {/* AI Chat — always visible after login */}
-      <AiChat
-        student={student}
-        inProgress={inProgress}
-        completed={completed}
-        recommendations={recommendations}
-      />
+      <AiChat student={student} inProgress={inProgress} completed={completed} recommendations={recommendations} />
     </div>
   )
 }
