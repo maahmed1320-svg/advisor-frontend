@@ -1,37 +1,278 @@
-.modalOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.85);
-  z-index: 9999;
+.shell { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ── Topbar ── */
+.topbar {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  border-bottom: 0.5px solid var(--gray-200);
+  height: 44px;
+  flex-shrink: 0;
 }
 
-.modalHeader {
+.brand {
+  font-size: 16px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  padding: 0 1.1rem;
+  border-right: 0.5px solid var(--gray-200);
+  height: 100%;
   display: flex;
-  justify-content: space-between;
-  padding: 16px;
-  background: #111;
-  color: white;
+  align-items: center;
 }
 
-.modalBody {
+.studentName {
+  font-size: 16px;
+  font-style: italic;
+  padding: 0 1.1rem;
   flex: 1;
-  overflow: auto;
-  padding: 20px;
-  background: #0b0b0b;
 }
 
-.closeBtn {
-  background: transparent;
+.majorPill {
+  font-size: 16px;
+  color: var(--gray-400);
+  padding: 0 1.1rem;
+  border-left: 0.5px solid var(--gray-200);
+  border-right: 0.5px solid var(--gray-200);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  letter-spacing: 0.04em;
+}
+
+/* Semester toggle */
+.semToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 1.1rem;
+  border-right: 0.5px solid var(--gray-200);
+  height: 100%;
+}
+
+.semLabel {
+  font-size: 16px;
+  color: var(--gray-400);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.semBtns {
+  display: flex;
+  border: 0.5px solid var(--gray-200);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.semBtn {
+  font-size: 16px;
+  padding: 3px 10px;
   border: none;
-  color: white;
-  font-size: 22px;
+  border-radius: 0;
+  background: transparent;
+  color: var(--gray-400);
+  letter-spacing: 0.04em;
   cursor: pointer;
 }
+.semBtn:hover { background: var(--gray-50); }
+.semActive {
+  background: var(--black) !important;
+  color: var(--white) !important;
+}
 
-.quickActions {
+.logoutBtn {
+  font-size: 16px;
+  color: var(--gray-400);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0 1.1rem;
+  height: 100%;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.logoutBtn:hover { color: var(--black); background: var(--gray-50); }
+
+/* ── Stats ── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  border-bottom: 0.5px solid var(--gray-200);
+  flex-shrink: 0;
+}
+
+.stat {
+  padding: 0.8rem 1.1rem;
+  border-right: 0.5px solid var(--gray-200);
+}
+.stat:last-child { border-right: none; }
+
+.statLabel { font-size: 15px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-400); margin-bottom: 3px; }
+.statVal   { font-size: 22px; font-weight: normal; line-height: 1; }
+.statSub   { font-size: 16px; color: var(--gray-400); margin-top: 2px; }
+
+/* ── Cascade warning ── */
+.cascadeWarn {
+  font-size: 17px;
+  color: var(--red);
+  background: var(--red-bg);
+  border-bottom: 0.5px solid var(--red-border);
+  padding: 7px 1.1rem;
+  flex-shrink: 0;
+}
+
+/* ── 3-col grid ── */
+.cols {
+  display: grid;
+  grid-template-columns: var(--col1-width, 1fr) 1fr 1fr;
+  grid-template-rows: 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+.col {
+  border-right: 0.5px solid var(--gray-200);
   display: flex;
-  gap: 10px;
-  padding: 10px;
+  flex-direction: column;
+  overflow: hidden;
+}
+.col:last-child { border-right: none; }
+
+.section {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 0.5px solid var(--gray-200);
+}
+.section:last-child { border-bottom: none; flex: 1; }
+
+.colHd {
+  font-size: 15px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  padding: 0.6rem 1.1rem;
+  border-bottom: 0.5px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.hdCount { font-size: 15px; color: var(--gray-300); }
+
+.colBody { padding: 0.85rem 1.1rem; display: flex; flex-direction: column; }
+
+.scrollable {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Calendar toggle button ── */
+.calToggleBtn {
+  font-size: 15px;
+  padding: 3px 8px;
+  border: 0.5px solid var(--gray-300);
+  border-radius: 99px;
+  background: transparent;
+  color: var(--gray-500);
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.15s;
+}
+.calToggleBtn:hover { background: var(--gray-50); }
+.calActive {
+  background: var(--black) !important;
+  color: var(--white) !important;
+  border-color: var(--black) !important;
+}
+
+/* ── Semester toggle ── */
+.semToggle { display:flex; align-items:center; gap:8px; padding:0 1rem; border-left:0.5px solid var(--gray-200); height:100%; }
+.semLabel  { font-size:16px; color:var(--gray-400); white-space:nowrap; }
+.semBtns   { display:flex; border:0.5px solid var(--gray-200); border-radius:99px; overflow:hidden; }
+.semBtn    { font-size:16px; padding:3px 10px; border:none; background:transparent; color:var(--gray-400); cursor:pointer; }
+.semBtn:hover { background:var(--gray-50); }
+.semActive { background:var(--black) !important; color:var(--white) !important; }
+
+/* Cart button in header */
+.cartBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 17px;
+  padding: 5px 14px;
+  border: 0.5px solid var(--gray-300);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--gray-500);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.cartBtn:hover { background: var(--gray-50); }
+.cartBtnActive {
+  background: var(--black) !important;
+  color: var(--white) !important;
+  border-color: var(--black) !important;
+}
+.cartBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--black);
+  font-size: 16px;
+  font-weight: 600;
+}
+.cartBtnActive .cartBadge {
+  background: var(--white);
+  color: var(--black);
+}
+
+/* ── Mobile responsive ── */
+.hideOnMobile { display: block; }
+
+@media (max-width: 768px) {
+  .hideOnMobile { display: none; }
+
+  .topbar {
+    padding: 6px 10px;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+  .brand { font-size: 11px; }
+  .studentName { font-size: 12px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .logoutBtn { font-size: 11px; padding: 4px 8px; }
+  .cartBtn { padding: 4px 10px; font-size: 13px; }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+  }
+  .stat { padding: 8px 12px; }
+  .statVal { font-size: 18px; }
+
+  .cols {
+    grid-template-columns: 1fr !important;
+    --col1-width: 1fr !important;
+  }
+  .col[style*="gridColumn"] {
+    grid-column: 1 !important;
+  }
+  .col:first-child {
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .statLabel { font-size: 9px; }
+  .statVal   { font-size: 16px; }
+  .statSub   { font-size: 10px; }
 }
