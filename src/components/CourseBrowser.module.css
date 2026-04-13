@@ -145,3 +145,17 @@
 .cardLocked .hName {
   color: #999 !important;
 }
+
+/* Unlock score badge */
+.unlockScore {
+  font-size: 12px;
+  color: var(--gray-400, #999);
+  background: var(--gray-50, #f5f3ee);
+  border: 0.5px solid var(--gray-200, #ddd);
+  border-radius: 99px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: monospace;
+}

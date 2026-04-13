@@ -79,6 +79,11 @@ export default function CourseBrowser({ recommendations, cart, onToggleCart, sem
                 <span className={s.hCode}>{r.code}</span>
                 <span className={s.hSep}> – </span>
                 <span className={s.hName}>{r.name}</span>
+                {r.downstreamUnlocks > 0 && (
+                  <span className={s.unlockScore} title={`Unlocks ${r.downstreamUnlocks} future course${r.downstreamUnlocks !== 1 ? 's' : ''} (direct + indirect)`}>
+                    {r.downstreamUnlocks} pts
+                  </span>
+                )}
                 <div className={s.hRight}>
                   {blocked  && <span className={`${s.badge} ${s.badgeBlocked}`}>blocked</span>}
                   {noPrereq && <span className={`${s.badge} ${s.badgePending}`}>prereqs pending</span>}
