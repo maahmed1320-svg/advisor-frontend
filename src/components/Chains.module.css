@@ -50,3 +50,13 @@
   align-items: center;
   gap: 4px;
 }
+
+.coReqBadge {
+  background: #6366f1;
+  color: #fff;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 99px;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}

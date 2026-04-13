@@ -7,6 +7,7 @@ const STATE_COLOR = {
   in_progress_at_risk: { fill:'#fff', stroke:'#c00', text:'#c00' },
   available:           { fill:'#fff', stroke:'#777', text:'#444' },
   locked:              { fill:'#fff', stroke:'#ddd', text:'#bbb' },
+  placeholder:         { fill:'#f5f5f5', stroke:'#e0e0e0', text:'#aaa' },
 }
 
 const NODE_W = 120
@@ -48,9 +49,16 @@ function buildGraph(chains) {
     }
   }
 
+  // Track nodes that have at least one co-req edge coming IN
+  const coReqNodes = new Set()
+  for (const edge of coReqEdges) {
+    const child = edge.split('->')[1]
+    coReqNodes.add(child)
+  }
+
   const allCodes = new Set(chains.flat().map(n => cleanCode(n.code)))
   const roots    = [...allCodes].filter(c => !parentsMap[c])
-  return { stateMap, childrenMap, parentsMap, roots, coReqEdges }
+  return { stateMap, childrenMap, parentsMap, roots, coReqEdges, coReqNodes }
 }
 
 function assignLayers(roots, childrenMap, parentsMap) {
@@ -117,7 +125,7 @@ function getAncestorEdges(code, parentsMap) {
 export default function Chains({ chains }) {
   const [hovered, setHovered] = useState(null)
 
-  const { stateMap, childrenMap, parentsMap, roots, coReqEdges } = useMemo(
+  const { stateMap, childrenMap, parentsMap, roots, coReqEdges, coReqNodes } = useMemo(
     () => buildGraph(chains), [chains]
   )
   const layer = useMemo(
@@ -242,6 +250,7 @@ export default function Chains({ chains }) {
 
           const label = code
             .replace('_CSE','').replace('_SWE','').replace('_CEN','')
+          const isNodeCoReq = coReqNodes.has(code)
 
           return (
             <g key={code}
@@ -263,6 +272,17 @@ export default function Chains({ chains }) {
               >
                 {label}
               </text>
+              {/* Small indigo diamond badge for co-req nodes */}
+              {isNodeCoReq && !isDim && (
+                <g transform={`translate(${x + NODE_W - 6}, ${y})`}>
+                  <circle cx="0" cy="0" r="6"
+                    fill="#6366f1" stroke="#fff" strokeWidth="1.5"/>
+                  <text x="0" y="0" textAnchor="middle" dominantBaseline="central"
+                    fontSize="8" fill="#fff" style={{pointerEvents:'none',userSelect:'none',fontWeight:'bold'}}>
+                    C
+                  </text>
+                </g>
+              )}
             </g>
           )
         })}
@@ -274,6 +294,9 @@ export default function Chains({ chains }) {
       {hovered && (
         <div className={s.hoverInfo}>
           <span className={s.hoveredCode}>{hovered}</span>
+          {coReqNodes.has(hovered) && (
+            <span className={s.coReqBadge}>co-req</span>
+          )}
           {parentsMap[hovered]?.size > 0 && (
             <span className={s.prereqList}>
               requires: {[...(parentsMap[hovered]||[])].join(' + ')}
