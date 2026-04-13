@@ -17,7 +17,7 @@ ACADEMIC STATUS:
 - Credits Remaining: ${student.requiredCredits - student.earnedCredits}
 
 CURRENTLY ENROLLED (${inProgress.length} courses):
-${inProgress.map(c => `- ${c.code}: ${c.name} | Grade: ${c.grade ?? 'N/A'}% | Attendance: ${c.attendance ?? 'N/A'}% | Prediction: ${c.prediction?.score ?? 'N/A'}% (${c.passFail ? 'likely pass' : 'AT RISK'})`).join('\n') || '- None'}
+${inProgress.map(c => `- ${c.code}: ${c.name}`).join('\n') || '- None'}
 
 COMPLETED COURSES (${completed.length} total):
 ${completed.map(c => `- ${c.code}: ${c.name}`).join('\n') || '- None'}
@@ -53,7 +53,6 @@ export default function AiChat({ student, inProgress, completed, recommendations
   useEffect(() => {
     if (open && messages.length === 0) {
       const available = recommendations.filter(r => r.prereqsMet && !r.isBlocked)
-      const atRisk    = inProgress.filter(c => !c.passFail)
       setMessages([{ role: 'assistant', content:
         `Hi! I'm your academic advisor assistant. I can see your full profile — Semester ${student.semester} of ${student.major}, GPA ${student.gpa}, ${student.earnedCredits} credits completed.\n\nYou have **${available.length} courses available** to enroll in this semester.${atRisk.length > 0 ? `\n\n⚠️ **${atRisk.length} course${atRisk.length>1?'s are':' is'} at risk** — let's talk about that.` : ''}\n\nHow can I help you today?`
       }])

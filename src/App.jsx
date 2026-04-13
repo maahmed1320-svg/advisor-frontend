@@ -84,7 +84,7 @@ export default function App() {
     return (
       <div className={s.shell}>
         <header className={s.topbar}>
-          <div className={s.brand}>Advisor</div>
+          <div className={s.brand}>Student's name</div>
           <div className={s.studentName}>{student.name}</div>
           <div className={s.majorPill}>{student.major}</div>
           <div style={{marginLeft:'auto'}} />
@@ -114,7 +114,7 @@ export default function App() {
 
       {/* Top bar */}
       <header className={s.topbar}>
-        <div className={s.brand}>Advisor</div>
+        <div className={s.brand}>Student's name</div>
         <div className={s.studentName}>{student.name}</div>
         <div className={`${s.majorPill} ${s.hideOnMobile}`}>{student.major}</div>
         <div className={s.semToggle}>
