@@ -235,6 +235,12 @@ export default function Chains({ chains, coReqEdges: coReqEdgeList }) {
           if (isDim)        { opacity = 0.15 }
           else if (isHover) { fill='#f59e0b'; stroke='#d97706'; text='#fff'; strokeW=2 }
           else if (isHl)    { stroke='#f59e0b'; strokeW=1.8 }
+          // Co-req nodes get indigo tint when not hovered/dimmed
+          if (!isDim && !isHover && isNodeCoReq) {
+            fill   = fill === '#111' ? '#111' : '#eef2ff'   // keep completed black, tint others
+            stroke = stroke === '#111' ? '#111' : '#6366f1'  // keep completed border, indigo others
+            text   = text === '#fff' ? '#fff' : '#4338ca'    // keep completed white text, indigo others
+          }
 
           const label = code
             .replace('_CSE','').replace('_SWE','').replace('_CEN','')
@@ -293,12 +299,12 @@ export default function Chains({ chains, coReqEdges: coReqEdgeList }) {
 
       <div className={s.legend}>
         {[
-          ['#111','#111','Done'],
-          ['#fff','#111','In progress'],
-          ['#fff','#c00','At risk'],
-          ['#fff','#777','Available'],
-          ['#fff','#ddd','Locked'],
-        ].map(([fill,stroke,label]) => (
+          ['#111','#111','#fff','Completed'],
+          ['#fff','#111','#111','In progress'],
+          ['#fff','#777','#444','Available'],
+          ['#fff','#ddd','#bbb','Locked'],
+          ['#eef2ff','#6366f1','#4338ca','Co-requisite'],
+        ].map(([fill,stroke,text,label]) => (
           <span key={label} className={s.legendItem}>
             <svg width="24" height="14" viewBox="0 0 24 14">
               <rect x="1" y="1" width="22" height="12" rx="6"
@@ -309,7 +315,7 @@ export default function Chains({ chains, coReqEdges: coReqEdgeList }) {
         ))}
         <span className={s.legendItem}>
           <svg width="32" height="14" viewBox="0 0 32 14">
-            <line x1="2" y1="7" x2="30" y2="7" stroke="#ccc" strokeWidth="1.5" markerEnd="url(#arr-normal)"/>
+            <line x1="2" y1="7" x2="30" y2="7" stroke="#ccc" strokeWidth="1.5"/>
           </svg>
           Prerequisite
         </span>
@@ -318,13 +324,7 @@ export default function Chains({ chains, coReqEdges: coReqEdgeList }) {
             <line x1="2" y1="7" x2="30" y2="7" stroke="#6366f1"
               strokeWidth="1.5" strokeDasharray="5 3"/>
           </svg>
-          Co-requisite
-        </span>
-        <span className={s.legendItem}>
-          <svg width="14" height="14" viewBox="0 0 14 14">
-            <circle cx="7" cy="7" r="5" fill="#6366f1"/>
-          </svg>
-          Has co-req
+          Must take together
         </span>
       </div>
     </div>

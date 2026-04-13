@@ -103,7 +103,7 @@ export default function App() {
     return (
       <div className={s.shell}>
         <header className={s.topbar}>
-          <div className={s.brand}>Advisor</div>
+          <div className={s.brand}>Student's Name</div>
           <div className={s.studentName}>{student.name}</div>
           <div style={{marginLeft:'auto'}} />
           <button onClick={handleLogout} className={s.logoutBtn}>Sign out</button>
@@ -127,7 +127,7 @@ export default function App() {
     <div className={s.shell}>
 
       <header className={s.topbar}>
-        <div className={s.brand}>Advisor</div>
+        <div className={s.brand}>Student's Name</div>
         <div className={s.studentName}>{student.name}</div>
         <div className={`${s.majorPill} ${s.hideOnMobile}`}>{student.major}</div>
         <div className={s.semToggle}>
