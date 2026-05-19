@@ -1,9 +1,5 @@
 import { useEffect, useRef, useMemo } from 'react'
-import { Scene, PerspectiveCamera, WebGLRenderer, SphereGeometry,
-         MeshPhongMaterial, Mesh, LineBasicMaterial, BufferGeometry,
-         Vector3, Points, PointsMaterial, AmbientLight, PointLight,
-         QuadraticBezierCurve3, TorusGeometry, Sprite, SpriteMaterial,
-         CanvasTexture, BufferAttribute } from 'three'
+import * as THREE from 'three'
 
 
 // ── Constants ────────────────────────────────────────────────
