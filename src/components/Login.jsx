@@ -7,16 +7,15 @@ const HINT_IDS = [
   'S003 — Ahmed Yahya',
   'S004 — Student 4',
   'S005 — Student 5',
-  "** No need for password or Auth for now **"
+  '** No password or auth required for now **',
 ]
 
 export default function Login({ onLogin, loading, error }) {
   const [id, setId] = useState('')
-  const [pw, setPw] = useState('')
 
   function submit(e) {
     e.preventDefault()
-    if (id.trim()) onLogin(id.trim().toUpperCase())
+    if (id.trim()) onLogin(id.trim())
   }
 
   return (
@@ -36,14 +35,6 @@ export default function Login({ onLogin, loading, error }) {
           autoFocus
         />
 
-        <label className={s.label} style={{ marginTop: 12 }}>Password</label>
-        <input
-          type="password"
-          value={pw}
-          onChange={e => setPw(e.target.value)}
-          placeholder="••••••••"
-        />
-
         {error && <p className={s.err}>{error}</p>}
 
         <button
@@ -61,7 +52,7 @@ export default function Login({ onLogin, loading, error }) {
       </form>
 
       <p className={s.footer}>
-        Done by Muaaz Ahmed & Ahmed Yahya .. proof of concept 
+        Done by Muaaz Ahmed &amp; Ahmed Yahya — proof of concept
       </p>
     </div>
   )

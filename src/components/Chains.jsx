@@ -1,351 +1,443 @@
-import { useMemo, useState } from 'react'
-import s from './Chains.module.css'
+import { useEffect, useRef, useMemo } from 'react'
+import { Scene, PerspectiveCamera, WebGLRenderer, SphereGeometry,
+         MeshPhongMaterial, Mesh, LineBasicMaterial, BufferGeometry,
+         Vector3, Points, PointsMaterial, AmbientLight, PointLight,
+         QuadraticBezierCurve3, TorusGeometry, Sprite, SpriteMaterial,
+         CanvasTexture, BufferAttribute } from 'three'
 
-const STATE_COLOR = {
-  completed:           { fill:'#111', stroke:'#111', text:'#fff' },
-  in_progress:         { fill:'#fff', stroke:'#111', text:'#111' },
-  in_progress_at_risk: { fill:'#fff', stroke:'#c00', text:'#c00' },
-  available:           { fill:'#fff', stroke:'#777', text:'#444' },
-  locked:              { fill:'#fff', stroke:'#ddd', text:'#bbb' },
-  placeholder:         { fill:'#f8f8f8', stroke:'#e0e0e0', text:'#bbb' },
+
+// ── Constants ────────────────────────────────────────────────
+const STATE_CFG = {
+  completed:           { color: 0xffffff, emissive: 0x88ffcc, radius: 0.38, opacity: 1.0,  ring: false },
+  in_progress:         { color: 0x4fc3f7, emissive: 0x0077aa, radius: 0.36, opacity: 1.0,  ring: true  },
+  in_progress_at_risk: { color: 0xff6b6b, emissive: 0xaa1100, radius: 0.36, opacity: 1.0,  ring: true  },
+  available:           { color: 0xaaaacc, emissive: 0x333366, radius: 0.30, opacity: 0.90, ring: false },
+  locked:              { color: 0x333344, emissive: 0x111122, radius: 0.22, opacity: 0.55, ring: false },
+  placeholder:         { color: 0x222233, emissive: 0x111122, radius: 0.14, opacity: 0.30, ring: false },
 }
 
-const NODE_W = 100
-const NODE_H = 34
-const COL_W  = 130
-const ROW_H  = 52
+const EDGE_COLOR_NORMAL = 0x334466
+const EDGE_COLOR_COREQ  = 0x6366f1
+const EDGE_COLOR_HL     = 0xf59e0b
+const EDGE_COLOR_BLOCK  = 0xef4444
 
-function buildGraph(chains, coReqEdgeList) {
-  const stateMap    = {}
-  const childrenMap = {}
-  const parentsMap  = {}
-  const coReqEdges  = new Set(coReqEdgeList || [])
+// ── Layout: assign 3D positions ──────────────────────────────
+function buildGraph(chainDisplay, coReqEdges, blockedCodes) {
+  const stateMap = {}
+  for (const node of chainDisplay) stateMap[node.code] = node.state
 
-  for (const chain of chains) {
-    for (let i = 0; i < chain.length; i++) {
-      const { code, state } = chain[i]
-      stateMap[code] = state
-      if (i < chain.length - 1) {
-        const childCode = chain[i + 1].code
-        if (!childrenMap[code])     childrenMap[code]     = new Set()
-        if (!parentsMap[childCode]) parentsMap[childCode] = new Set()
-        childrenMap[code].add(childCode)
-        parentsMap[childCode].add(code)
-      }
-    }
+  const prereqMap  = {}
+  const childrenOf = {}
+  const coReqSet   = new Set(coReqEdges || [])
+  const blockedSet = new Set(blockedCodes || [])
+
+  // Build edges from sequential chain order
+  const codes = chainDisplay.map(n => n.code)
+  const seen  = new Set()
+  for (let i = 0; i < codes.length; i++) {
+    if (seen.has(codes[i])) continue
+    seen.add(codes[i])
+    prereqMap[codes[i]]  = prereqMap[codes[i]]  || []
+    childrenOf[codes[i]] = childrenOf[codes[i]] || []
   }
 
-  // Which nodes have at least one co-req edge coming IN
-  const coReqNodes = new Set()
-  for (const edge of coReqEdges) {
-    const child = edge.split('->')[1]
-    coReqNodes.add(child)
+  // Build parent→child from coReqEdges + infer chain edges
+  // We use a simple topological layout: BFS from roots
+  const allEdges = []
+  for (const edge of coReqSet) {
+    const [a, b] = edge.split('->')
+    if (!prereqMap[b])  prereqMap[b]  = []
+    if (!childrenOf[a]) childrenOf[a] = []
+    if (!prereqMap[b].includes(a))  prereqMap[b].push(a)
+    if (!childrenOf[a].includes(b)) childrenOf[a].push(b)
+    allEdges.push({ from: a, to: b, type: 'coreq' })
   }
 
-  const allCodes = new Set(chains.flat().map(n => n.code))
-  const roots    = [...allCodes].filter(c => !parentsMap[c])
-  return { stateMap, childrenMap, parentsMap, roots, coReqEdges, coReqNodes }
-}
-
-function assignLayers(roots, childrenMap, parentsMap) {
+  // Assign layers via BFS
   const layer = {}
-  const queue = [...roots]
-  roots.forEach(r => { layer[r] = 0 })
-  while (queue.length) {
-    const node = queue.shift()
-    for (const child of (childrenMap[node] || [])) {
-      const parents = [...(parentsMap[child] || [])]
-      const newL = Math.max(...parents.map(p => layer[p] ?? 0)) + 1
-      if (layer[child] === undefined || layer[child] < newL) {
-        layer[child] = newL
-        queue.push(child)
-      }
-    }
-  }
-  return layer
-}
-
-function assignPositions(layer, childrenMap, parentsMap) {
-  const byLayer = {}
-  for (const [code, l] of Object.entries(layer)) {
-    if (!byLayer[l]) byLayer[l] = []
-    byLayer[l].push(code)
-  }
-  const pos = {}
-  const maxLayer = Math.max(...Object.keys(byLayer).map(Number))
-  for (let l = 0; l <= maxLayer; l++) {
-    const nodes = (byLayer[l] || []).sort((a, b) => {
-      const avg = arr => arr.length ? arr.reduce((s,v)=>s+v,0)/arr.length : 0
-      const pa = [...(parentsMap[a]||[])].map(p=>pos[p]?.row??0)
-      const pb = [...(parentsMap[b]||[])].map(p=>pos[p]?.row??0)
-      return avg(pa) - avg(pb)
-    })
-    nodes.forEach((code, i) => { pos[code] = { col: l, row: i } })
-  }
-  return { pos, byLayer, maxLayer }
-}
-
-function getAncestors(code, parentsMap) {
-  const visited = new Set()
-  const queue   = [code]
+  const inDeg = {}
+  for (const code of codes) inDeg[code] = (prereqMap[code] || []).length
+  const queue = codes.filter(c => inDeg[c] === 0)
+  queue.forEach(c => { layer[c] = 0 })
+  const visited = new Set(queue)
   while (queue.length) {
     const cur = queue.shift()
-    if (visited.has(cur)) continue
-    visited.add(cur)
-    for (const p of (parentsMap[cur] || [])) queue.push(p)
-  }
-  return visited
-}
-
-function getAncestorEdges(code, parentsMap) {
-  const nodes = getAncestors(code, parentsMap)
-  const edges = new Set()
-  for (const node of nodes) {
-    for (const parent of (parentsMap[node] || [])) {
-      if (nodes.has(parent)) edges.add(`${parent}->${node}`)
+    for (const ch of (childrenOf[cur] || [])) {
+      const newL = (layer[cur] ?? 0) + 1
+      layer[ch] = Math.max(layer[ch] ?? 0, newL)
+      if (!visited.has(ch)) { visited.add(ch); queue.push(ch) }
     }
   }
-  return edges
-}
+  // Fallback: sequential layer for remaining
+  codes.forEach((c, i) => { if (layer[c] === undefined) layer[c] = Math.floor(i / 5) })
 
-// Returns which ancestor nodes are reachable ONLY via co-req edges from the hovered node
-function getCoReqAncestors(code, parentsMap, coReqEdges) {
-  const coReqParents = new Set()
-  for (const parent of (parentsMap[code] || [])) {
-    if (coReqEdges.has(`${parent}->${code}`)) {
-      coReqParents.add(parent)
+  // Group by layer
+  const byLayer = {}
+  for (const c of codes) {
+    const l = layer[c] ?? 0
+    if (!byLayer[l]) byLayer[l] = []
+    byLayer[l].push(c)
+  }
+
+  const maxLayer = Math.max(...Object.keys(byLayer).map(Number))
+  const positions = {}
+  const LAYER_GAP = 3.5
+  const NODE_GAP  = 2.2
+
+  for (let l = 0; l <= maxLayer; l++) {
+    const nodes = byLayer[l] || []
+    const count = nodes.length
+    nodes.forEach((code, i) => {
+      const x = l * LAYER_GAP - (maxLayer * LAYER_GAP) / 2
+      const y = (i - (count - 1) / 2) * NODE_GAP
+      const z = (Math.random() - 0.5) * 1.2
+      positions[code] = new THREE.Vector3(x, y, z)
+    })
+  }
+
+  // Normal chain edges (adjacent nodes in each layer boundary)
+  for (let l = 0; l < maxLayer; l++) {
+    const from = byLayer[l]  || []
+    const to   = byLayer[l+1] || []
+    if (from.length === 1) {
+      for (const t of to) {
+        if (!allEdges.find(e => e.from === from[0] && e.to === t))
+          allEdges.push({ from: from[0], to: t, type: 'normal' })
+      }
+    } else if (to.length === 1) {
+      for (const f of from) {
+        if (!allEdges.find(e => e.from === f && e.to === to[0]))
+          allEdges.push({ from: f, to: to[0], type: 'normal' })
+      }
     }
   }
-  return coReqParents
+
+  return { stateMap, positions, allEdges, blockedSet, coReqSet }
 }
 
-export default function Chains({ chains, coReqEdges: coReqEdgeList }) {
-  const [hovered, setHovered] = useState(null)
+// ── Label sprites (canvas texture) ──────────────────────────
+function makeLabel(code, color) {
+  const c = document.createElement('canvas')
+  c.width  = 256
+  c.height = 64
+  const ctx = c.getContext('2d')
+  ctx.clearRect(0, 0, 256, 64)
+  ctx.font = 'bold 22px monospace'
+  ctx.fillStyle = color
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  const label = code.replace(/_CSE|_SWE|_CEN|_BCE/g, '')
+  ctx.fillText(label, 128, 32)
+  const tex = new THREE.CanvasTexture(c)
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })
+  const sprite = new THREE.Sprite(mat)
+  sprite.scale.set(2.2, 0.55, 1)
+  return sprite
+}
 
-  const { stateMap, childrenMap, parentsMap, roots, coReqEdges, coReqNodes } = useMemo(
-    () => buildGraph(chains, coReqEdgeList), [chains, coReqEdgeList]
+// ── Main component ───────────────────────────────────────────
+export default function Chains({ chains: chainDisplay, coReqEdges, blockedCodes }) {
+  const mountRef  = useRef(null)
+  const stateRef  = useRef({})
+
+  const graphData = useMemo(
+    () => buildGraph(chainDisplay || [], coReqEdges || [], blockedCodes || []),
+    [chainDisplay, coReqEdges, blockedCodes]
   )
-  const layer = useMemo(
-    () => assignLayers(roots, childrenMap, parentsMap), [roots, childrenMap, parentsMap]
-  )
-  const { pos, byLayer, maxLayer } = useMemo(
-    () => assignPositions(layer, childrenMap, parentsMap), [layer, childrenMap, parentsMap]
-  )
 
-  const { hlNodes, hlEdges, coReqHlNodes } = useMemo(() => {
-    if (!hovered) return { hlNodes: null, hlEdges: null, coReqHlNodes: null }
-    const hlNodes = getAncestors(hovered, parentsMap)
-    hlNodes.add(hovered)
-    const hlEdges = getAncestorEdges(hovered, parentsMap)
-    // Direct co-req parents of hovered node
-    const coReqHlNodes = getCoReqAncestors(hovered, parentsMap, coReqEdges)
-    return { hlNodes, hlEdges, coReqHlNodes }
-  }, [hovered, parentsMap, coReqEdges])
+  useEffect(() => {
+    const el = mountRef.current
+    if (!el) return
 
-  const isAnyHovered = !!hovered
-  const maxRows = Math.max(...Object.values(byLayer).map(a => a.length))
-  const svgW    = (maxLayer + 1) * COL_W + NODE_W + 20
-  const svgH    = maxRows * ROW_H + NODE_H + 20
+    const W = el.clientWidth  || 900
+    const H = el.clientHeight || 600
 
-  function cx(code) { return pos[code].col * COL_W + NODE_W / 2 + 10 }
-  function cy(code) { return pos[code].row * ROW_H + NODE_H / 2 + 10 }
+    // ── Scene ────────────────────────────────────────────────
+    const scene    = new THREE.Scene()
+    scene.background = new THREE.Color(0x0a0a14)
 
-  const edges = []
-  for (const [parent, children] of Object.entries(childrenMap)) {
-    for (const child of children) {
-      if (pos[parent] && pos[child]) edges.push({ from: parent, to: child })
+    // Subtle star field
+    const starGeo = new THREE.BufferGeometry()
+    const starPos = new Float32Array(3000)
+    for (let i = 0; i < 3000; i++) starPos[i] = (Math.random() - 0.5) * 120
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3))
+    const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.06, transparent: true, opacity: 0.5 })
+    scene.add(new THREE.Points(starGeo, starMat))
+
+    // ── Camera ───────────────────────────────────────────────
+    const camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 200)
+    camera.position.set(0, 0, 22)
+
+    // ── Renderer ─────────────────────────────────────────────
+    const renderer = new THREE.WebGLRenderer({ antialias: true })
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setSize(W, H)
+    el.appendChild(renderer.domElement)
+
+    // ── Lighting ─────────────────────────────────────────────
+    scene.add(new THREE.AmbientLight(0x223366, 1.2))
+    const point = new THREE.PointLight(0x4488ff, 2.5, 60)
+    point.position.set(0, 8, 10)
+    scene.add(point)
+
+    // ── Nodes ────────────────────────────────────────────────
+    const { stateMap, positions, allEdges, blockedSet } = graphData
+    const nodeMap = {}   // code → { mesh, ring, label }
+    const allNodes = (chainDisplay || []).filter(n => n.state !== 'placeholder')
+
+    for (const node of allNodes) {
+      const { code, state } = node
+      const cfg = STATE_CFG[state] || STATE_CFG.locked
+      const pos = positions[code]
+      if (!pos) continue
+
+      const geo  = new THREE.SphereGeometry(cfg.radius, 28, 28)
+      const mat  = new THREE.MeshPhongMaterial({
+        color:       cfg.color,
+        emissive:    cfg.emissive,
+        emissiveIntensity: 0.6,
+        transparent: true,
+        opacity:     cfg.opacity,
+        shininess:   80,
+      })
+      if (blockedSet.has(code)) {
+        mat.color.set(0xff4444)
+        mat.emissive.set(0x880000)
+      }
+      const mesh = new THREE.Mesh(geo, mat)
+      mesh.position.copy(pos)
+      mesh.userData = { code, state, origColor: mat.color.clone(), origEmissive: mat.emissive.clone() }
+      scene.add(mesh)
+
+      // Pulse ring for in-progress
+      let ring = null
+      if (cfg.ring) {
+        const rGeo = new THREE.TorusGeometry(cfg.radius + 0.12, 0.04, 8, 40)
+        const rMat = new THREE.MeshBasicMaterial({
+          color: state === 'in_progress_at_risk' ? 0xff4444 : 0x4fc3f7,
+          transparent: true, opacity: 0.7,
+        })
+        ring = new THREE.Mesh(rGeo, rMat)
+        ring.position.copy(pos)
+        scene.add(ring)
+      }
+
+      // Label sprite
+      const labelColor = state === 'locked' ? '#334' : state === 'completed' ? '#aaffcc' : '#cce4ff'
+      const label = makeLabel(code, labelColor)
+      label.position.set(pos.x, pos.y - cfg.radius - 0.42, pos.z)
+      scene.add(label)
+
+      nodeMap[code] = { mesh, ring, label }
     }
-  }
+
+    // ── Edges ─────────────────────────────────────────────────
+    const edgeObjects = []
+    for (const edge of allEdges) {
+      const a = positions[edge.from]
+      const b = positions[edge.to]
+      if (!a || !b) continue
+
+      const mid    = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5)
+      mid.y       += (Math.random() - 0.5) * 0.8
+      const curve  = new THREE.QuadraticBezierCurve3(a, mid, b)
+      const pts    = curve.getPoints(30)
+      const geo    = new THREE.BufferGeometry().setFromPoints(pts)
+      const color  = edge.type === 'coreq' ? EDGE_COLOR_COREQ : EDGE_COLOR_NORMAL
+      const mat    = new THREE.LineBasicMaterial({
+        color, transparent: true, opacity: edge.type === 'coreq' ? 0.7 : 0.28,
+      })
+      const line = new THREE.Line(geo, mat)
+      line.userData = { from: edge.from, to: edge.to, type: edge.type, baseColor: color, baseOpacity: mat.opacity }
+      scene.add(line)
+      edgeObjects.push(line)
+    }
+
+    // ── Raycaster for hover ───────────────────────────────────
+    const raycaster = new THREE.Raycaster()
+    const mouse     = new THREE.Vector2()
+    const meshList  = Object.values(nodeMap).map(n => n.mesh)
+    let hoveredCode = null
+
+    function getRelMouse(e) {
+      const rect = renderer.domElement.getBoundingClientRect()
+      mouse.x =  ((e.clientX - rect.left)  / rect.width)  * 2 - 1
+      mouse.y = -((e.clientY - rect.top)   / rect.height) * 2 + 1
+    }
+
+    function onMouseMove(e) {
+      getRelMouse(e)
+      raycaster.setFromCamera(mouse, camera)
+      const hits = raycaster.intersectObjects(meshList)
+      const hit  = hits.length ? hits[0].object.userData.code : null
+
+      if (hit === hoveredCode) return
+      hoveredCode = hit
+
+      // Reset all
+      for (const [code, { mesh }] of Object.entries(nodeMap)) {
+        mesh.material.emissiveIntensity = 0.6
+        mesh.material.color.copy(mesh.userData.origColor)
+        mesh.material.emissive.copy(mesh.userData.origEmissive)
+        mesh.material.opacity = STATE_CFG[mesh.userData.state]?.opacity ?? 1
+      }
+      for (const line of edgeObjects) {
+        line.material.color.set(line.userData.baseColor)
+        line.material.opacity = line.userData.baseOpacity
+      }
+
+      if (!hit) { renderer.domElement.style.cursor = 'default'; return }
+      renderer.domElement.style.cursor = 'pointer'
+
+      // Highlight hit node
+      const n = nodeMap[hit]
+      if (n) {
+        n.mesh.material.emissiveIntensity = 1.8
+        n.mesh.material.color.set(0xf59e0b)
+        n.mesh.material.emissive.set(0xb05000)
+      }
+
+      // Highlight connected edges + dim others
+      const connectedNodes = new Set([hit])
+      for (const line of edgeObjects) {
+        const { from, to, type } = line.userData
+        if (from === hit || to === hit) {
+          line.material.color.set(type === 'coreq' ? EDGE_COLOR_COREQ : EDGE_COLOR_HL)
+          line.material.opacity = 0.9
+          connectedNodes.add(from)
+          connectedNodes.add(to)
+        } else {
+          line.material.opacity = 0.04
+        }
+      }
+      // Dim unconnected nodes
+      for (const [code, { mesh }] of Object.entries(nodeMap)) {
+        if (!connectedNodes.has(code)) {
+          mesh.material.opacity = 0.12
+        }
+      }
+    }
+
+    renderer.domElement.addEventListener('mousemove', onMouseMove)
+
+    // ── Orbit controls (manual, no dep needed) ───────────────
+    let isDragging = false
+    let lastX = 0, lastY = 0
+    let rotX = 0, rotY = 0, targetRotX = 0, targetRotY = 0
+    let zoom = 22, targetZoom = 22
+
+    renderer.domElement.addEventListener('mousedown', e => {
+      isDragging = true; lastX = e.clientX; lastY = e.clientY
+    })
+    window.addEventListener('mouseup', () => { isDragging = false })
+    window.addEventListener('mousemove', e => {
+      if (!isDragging) return
+      targetRotY += (e.clientX - lastX) * 0.004
+      targetRotX += (e.clientY - lastY) * 0.004
+      targetRotX  = Math.max(-1.1, Math.min(1.1, targetRotX))
+      lastX = e.clientX; lastY = e.clientY
+    })
+    renderer.domElement.addEventListener('wheel', e => {
+      targetZoom = Math.max(8, Math.min(45, targetZoom + e.deltaY * 0.04))
+      e.preventDefault()
+    }, { passive: false })
+
+    // ── Animation loop ────────────────────────────────────────
+    let frame = 0
+    let animId
+
+    function animate() {
+      animId = requestAnimationFrame(animate)
+      frame++
+
+      // Smooth camera
+      rotX += (targetRotX - rotX) * 0.08
+      rotY += (targetRotY - rotY) * 0.08
+      zoom += (targetZoom - zoom) * 0.08
+
+      camera.position.x = zoom * Math.sin(rotY) * Math.cos(rotX)
+      camera.position.y = zoom * Math.sin(rotX)
+      camera.position.z = zoom * Math.cos(rotY) * Math.cos(rotX)
+      camera.lookAt(0, 0, 0)
+
+      // Pulse rings
+      for (const { ring, mesh } of Object.values(nodeMap)) {
+        if (ring) {
+          const s = 1 + 0.12 * Math.sin(frame * 0.06)
+          ring.scale.set(s, s, 1)
+          ring.material.opacity = 0.4 + 0.3 * Math.sin(frame * 0.06)
+          ring.lookAt(camera.position)
+        }
+        // Gentle float
+        if (mesh.userData.state === 'completed') {
+          mesh.position.y = positions[mesh.userData.code]?.y + 0.06 * Math.sin(frame * 0.03 + mesh.id)
+        }
+      }
+
+      renderer.render(scene, camera)
+    }
+    animate()
+
+    // ── Resize ───────────────────────────────────────────────
+    function onResize() {
+      const w = el.clientWidth, h = el.clientHeight
+      camera.aspect = w / h
+      camera.updateProjectionMatrix()
+      renderer.setSize(w, h)
+    }
+    window.addEventListener('resize', onResize)
+
+    // ── Cleanup ──────────────────────────────────────────────
+    stateRef.current = { animId, renderer, scene }
+    return () => {
+      cancelAnimationFrame(animId)
+      renderer.domElement.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('resize', onResize)
+      renderer.dispose()
+      if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement)
+    }
+  }, [graphData])
 
   return (
-    <div className={s.wrap}>
-      <svg
-        width={svgW}
-        height={svgH}
-        viewBox={`0 0 ${svgW} ${svgH}`}
-        style={{ overflow:'visible', display:'block', cursor:'default', minWidth: svgW }}
-      >
-        <defs>
-          {[
-            ['arr-dim',    '#eee'],
-            ['arr-normal', '#ccc'],
-            ['arr-coreq',  '#6366f1'],
-            ['arr-hl',     '#f59e0b'],
-            ['arr-hlm',    '#ef4444'],
-          ].map(([id, color]) => (
-            <marker key={id} id={id} viewBox="0 0 10 10" refX="9" refY="5"
-              markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-              <path d="M1 2L9 5L1 8" fill="none" stroke={color}
-                strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </marker>
-          ))}
-        </defs>
+    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 560, background: '#0a0a14', borderRadius: 8 }}>
+      <div ref={mountRef} style={{ width: '100%', height: '100%', minHeight: 560 }} />
 
-        {/* Edges */}
-        {edges.map(({ from, to }) => {
-          const x1 = cx(from) + NODE_W / 2
-          const y1 = cy(from)
-          const x2 = cx(to)   - NODE_W / 2 - 3
-          const y2 = cy(to)
-
-          const edgeKey  = `${from}->${to}`
-          const isHl     = hlEdges?.has(edgeKey)
-          const isMultiP = (parentsMap[to]?.size ?? 0) > 1
-          const isDim    = isAnyHovered && !isHl
-          const isCoreq  = coReqEdges.has(edgeKey)
-
-          let stroke, strokeW, dash, marker
-          const isCoReqHlEdge = hlEdges?.has(edgeKey) && coReqEdges.has(edgeKey)
-
-          if (isDim) {
-            stroke='#eee'; strokeW=0.6; dash='none'; marker='url(#arr-dim)'
-          } else if (isCoReqHlEdge) {
-            stroke='#6366f1'; strokeW=2; dash='5 3'; marker='url(#arr-coreq)'
-          } else if (isHl && isMultiP) {
-            stroke='#ef4444'; strokeW=2; dash='none'; marker='url(#arr-hlm)'
-          } else if (isHl) {
-            stroke='#f59e0b'; strokeW=2; dash='none'; marker='url(#arr-hl)'
-          } else if (isCoreq) {
-            stroke='#6366f1'; strokeW=1.4; dash='5 3'; marker='url(#arr-coreq)'
-          } else {
-            stroke='#ccc'; strokeW=0.8
-            dash=isMultiP ? '3 2' : 'none'
-            marker='url(#arr-normal)'
-          }
-
-          let d
-          if (Math.abs(y1 - y2) < 2) {
-            d = `M${x1} ${y1} L${x2} ${y2}`
-          } else {
-            const mx = x1 + (x2 - x1) * 0.4
-            d = `M${x1} ${y1} C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}`
-          }
-
-          return (
-            <path key={edgeKey} d={d} fill="none"
-              stroke={stroke} strokeWidth={strokeW}
-              strokeDasharray={dash} markerEnd={marker}
-              style={{ transition:'stroke 0.15s, opacity 0.15s' }}
-            />
-          )
-        })}
-
-        {/* Nodes */}
-        {Object.keys(pos).map(code => {
-          const state    = stateMap[code] ?? 'locked'
-          const c        = STATE_COLOR[state] ?? STATE_COLOR.locked
-          const isHl     = hlNodes?.has(code)
-          const isDim    = isAnyHovered && !isHl
-          const isHover  = code === hovered
-          const isMultiP = (parentsMap[code]?.size ?? 0) > 1
-          const isNodeCoReq = coReqNodes.has(code)
-
-          const x = cx(code) - NODE_W / 2
-          const y = cy(code) - NODE_H / 2
-
-          let fill    = c.fill
-          let stroke  = c.stroke
-          let text    = c.text
-          let strokeW = isMultiP ? 1.5 : 0.8
-          let opacity = 1
-
-          const isCoReqParent = coReqHlNodes?.has(code)
-
-          if (isDim)              { opacity = 0.15 }
-          else if (isHover)       { fill='#f59e0b'; stroke='#d97706'; text='#fff'; strokeW=2 }
-          else if (isCoReqParent) { fill='#6366f1'; stroke='#4338ca'; text='#fff'; strokeW=2 }
-          else if (isHl)          { stroke='#f59e0b'; strokeW=1.8 }
-          // Co-req nodes get indigo tint when not hovered/highlighted
-          else if (isNodeCoReq) {
-            fill   = fill === '#111' ? '#111' : '#eef2ff'
-            stroke = stroke === '#111' ? '#111' : '#6366f1'
-            text   = text === '#fff' ? '#fff' : '#4338ca'
-          }
-
-          const label = code
-            .replace('_CSE','').replace('_SWE','').replace('_CEN','')
-
-          return (
-            <g key={code}
-              style={{ cursor:'pointer', transition:'opacity 0.15s' }}
-              opacity={opacity}
-              onMouseEnter={() => setHovered(code)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <rect x={x} y={y} width={NODE_W} height={NODE_H}
-                rx={NODE_H/2}
-                fill={fill} stroke={stroke} strokeWidth={strokeW}
-                strokeDasharray={isMultiP && !isHl && !isDim ? '4 2' : 'none'}
-                style={{ transition:'fill 0.15s, stroke 0.15s' }}
-              />
-              <text x={cx(code)} y={cy(code)}
-                textAnchor="middle" dominantBaseline="central"
-                fontSize="13" fontFamily="monospace" fill={text}
-                style={{ pointerEvents:'none', userSelect:'none' }}
-              >
-                {label}
-              </text>
-              {/* Indigo dot on top-right for co-req nodes */}
-              {isNodeCoReq && !isDim && (
-                <circle
-                  cx={x + NODE_W - 3} cy={y + 3} r={4}
-                  fill="#6366f1" stroke="#fff" strokeWidth="1.5"
-                />
-              )}
-            </g>
-          )
-        })}
-      </svg>
-
-      {!hovered && (
-        <div className={s.hint}>Hover a course to highlight its prerequisite chain</div>
-      )}
-      {hovered && (
-        <div className={s.hoverInfo}>
-          <span className={s.hoveredCode}>{hovered}</span>
-          {coReqNodes.has(hovered) && (
-            <span className={s.coReqBadge}>co-requisite</span>
-          )}
-          {parentsMap[hovered]?.size > 0 && (
-            <span className={s.prereqList}>
-              requires: {[...(parentsMap[hovered]||[])].join(' + ')}
-            </span>
-          )}
-          {(parentsMap[hovered]?.size ?? 0) === 0 && (
-            <span className={s.prereqList}>no prerequisites</span>
-          )}
-        </div>
-      )}
-
-      <div className={s.legend}>
+      {/* Legend */}
+      <div style={{
+        position: 'absolute', bottom: 14, left: 14,
+        display: 'flex', flexWrap: 'wrap', gap: '8px 14px',
+        fontSize: 11, color: '#8899bb', fontFamily: 'monospace',
+        pointerEvents: 'none',
+      }}>
         {[
-          ['#111','#111','#fff','Completed'],
-          ['#fff','#111','#111','In progress'],
-          ['#fff','#777','#444','Available'],
-          ['#fff','#ddd','#bbb','Locked'],
-          ['#eef2ff','#6366f1','#4338ca','Co-requisite'],
-        ].map(([fill,stroke,text,label]) => (
-          <span key={label} className={s.legendItem}>
-            <svg width="24" height="14" viewBox="0 0 24 14">
-              <rect x="1" y="1" width="22" height="12" rx="6"
-                fill={fill} stroke={stroke} strokeWidth="0.8"/>
-            </svg>
-            {label}
+          ['#88ffcc', 'Completed'],
+          ['#4fc3f7', 'In progress'],
+          ['#ff6b6b', 'At risk / Blocked'],
+          ['#aaaacc', 'Available'],
+          ['#445', 'Locked'],
+          ['#6366f1', '— Co-req'],
+          ['#f59e0b', '— Prerequisite'],
+        ].map(([color, label]) => (
+          <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{
+              display: 'inline-block',
+              width: label.startsWith('—') ? 18 : 9,
+              height: label.startsWith('—') ? 2 : 9,
+              borderRadius: label.startsWith('—') ? 1 : '50%',
+              background: color,
+            }} />
+            {label.replace('— ', '')}
           </span>
         ))}
-        <span className={s.legendItem}>
-          <svg width="32" height="14" viewBox="0 0 32 14">
-            <line x1="2" y1="7" x2="30" y2="7" stroke="#ccc" strokeWidth="1.5"/>
-          </svg>
-          Prerequisite
-        </span>
-        <span className={s.legendItem}>
-          <svg width="32" height="14" viewBox="0 0 32 14">
-            <line x1="2" y1="7" x2="30" y2="7" stroke="#6366f1"
-              strokeWidth="1.5" strokeDasharray="5 3"/>
-          </svg>
-          Must take together
-        </span>
+      </div>
+
+      {/* Controls hint */}
+      <div style={{
+        position: 'absolute', top: 12, right: 14,
+        fontSize: 11, color: '#445566', fontFamily: 'monospace',
+        pointerEvents: 'none', textAlign: 'right', lineHeight: 1.7,
+      }}>
+        drag to rotate · scroll to zoom · hover to highlight
       </div>
     </div>
   )

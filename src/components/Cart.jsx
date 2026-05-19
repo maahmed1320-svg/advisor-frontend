@@ -1,12 +1,11 @@
 import { useState, useMemo } from 'react'
-import { submitCart } from '../api.js'
 import s from './Cart.module.css'
 
-const DAY_MAP  = { Mo:0, Tu:1, We:2, Th:3, Fr:4 }
+const DAY_MAP    = { Mo:0, Tu:1, We:2, Th:3, Fr:4 }
 const DAY_LABELS = ['MON','TUE','WED','THU','FRI']
-const START_H  = 9
-const END_H    = 22
-const TOTAL_M  = (END_H - START_H) * 60
+const START_H    = 9
+const END_H      = 22
+const TOTAL_M    = (END_H - START_H) * 60
 
 const PALETTE = [
   '#dce8f5','#d5ecd8','#f5ebd5','#ecd5ec','#d5ecec','#f5d5d5','#e8f0d5',
@@ -23,7 +22,7 @@ function parseDays(days) {
   const out = []
   let i = 0
   while (i < days.length) {
-    const two = days.slice(i, i+2)
+    const two = days.slice(i, i + 2)
     if (DAY_MAP[two] !== undefined) { out.push(DAY_MAP[two]); i += 2 }
     else i++
   }
@@ -32,7 +31,7 @@ function parseDays(days) {
 
 function hourLabel(h) {
   if (h === 12) return '12pm'
-  if (h > 12) return `${h-12}pm`
+  if (h > 12) return `${h - 12}pm`
   return `${h}am`
 }
 
@@ -59,7 +58,14 @@ function ScheduleGrid({ cartItems }) {
         const endM   = toMins(parts[1])
         if (!startM || !endM) return
         dayNums.forEach(day => {
-          result.push({ code: item.code, name: item.name, day, startM, endM, color: PALETTE[idx % PALETTE.length] })
+          result.push({
+            code:  item.code,
+            name:  item.name,
+            day,
+            startM,
+            endM,
+            color: PALETTE[idx % PALETTE.length],
+          })
         })
       })
     })
@@ -71,22 +77,23 @@ function ScheduleGrid({ cartItems }) {
 
   return (
     <div className={s.grid}>
-      {/* Time gutter */}
       <div className={s.gutter}>
         <div className={s.gutterTop} />
         {hours.map(h => <div key={h} className={s.gutterCell}>{hourLabel(h)}</div>)}
       </div>
-      {/* Day columns */}
       {DAY_LABELS.map((label, di) => (
         <div key={label} className={s.dayCol}>
           <div className={s.dayHd}>{label}</div>
           <div className={s.dayBody}>
-            {hours.map(h => <div key={h} className={s.hourLine} style={{top:`${((h-START_H)/TOTAL_M*3600).toFixed(2)}%`}} />)}
+            {hours.map(h => (
+              <div key={h} className={s.hourLine}
+                style={{ top: `${((h - START_H) / TOTAL_M * 3600).toFixed(2)}%` }} />
+            ))}
             {blocks.filter(b => b.day === di).map((b, i) => {
-              const top = ((b.startM - START_H*60) / TOTAL_M * 100).toFixed(3)
+              const top = ((b.startM - START_H * 60) / TOTAL_M * 100).toFixed(3)
               const ht  = ((b.endM - b.startM) / TOTAL_M * 100).toFixed(3)
               return (
-                <div key={i} className={s.block} style={{ top:`${top}%`, height:`${ht}%`, background:b.color }}>
+                <div key={i} className={s.block} style={{ top: `${top}%`, height: `${ht}%`, background: b.color }}>
                   <div className={s.bCode}>{b.code}</div>
                   <div className={s.bName}>{b.name}</div>
                 </div>
@@ -99,26 +106,13 @@ function ScheduleGrid({ cartItems }) {
   )
 }
 
-export default function Cart({ studentId, cartItems, onRemove, onSubmitted }) {
+export default function Cart({ cartItems, onRemove }) {
   const [showSched, setShowSched] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [submitted,  setSubmitted]  = useState(false)
-
   const totalCr = cartItems.reduce((sum, c) => sum + (c.credits ?? 3), 0)
-
-  async function handleSubmit() {
-    if (!cartItems.length) return
-    setSubmitting(true)
-    try {
-      await submitCart(studentId, cartItems.map(c => c.code), 'Fall 2026')
-      setSubmitted(true)
-      setTimeout(() => { setSubmitted(false); onSubmitted() }, 2000)
-    } catch (e) { console.error(e) }
-    finally { setSubmitting(false) }
-  }
 
   return (
     <div className={s.wrap}>
+
       {/* Header */}
       <div className={s.hdr}>
         <span className={s.hdrTitle}>My Cart</span>
@@ -146,7 +140,7 @@ export default function Cart({ studentId, cartItems, onRemove, onSubmitted }) {
       {/* Course list */}
       <div className={s.list}>
         {cartItems.length === 0 && !showSched && (
-          <p className={s.empty}>No courses added yet.<br/>Click a recommendation card to add.</p>
+          <p className={s.empty}>No courses added yet.<br />Click a recommendation card to add.</p>
         )}
         {cartItems.map(item => (
           <div key={item.code} className={s.item}>
@@ -172,19 +166,13 @@ export default function Cart({ studentId, cartItems, onRemove, onSubmitted }) {
         ))}
       </div>
 
-      {/* Footer */}
+      {/* Footer — credits summary only, no submit */}
       {cartItems.length > 0 && (
         <div className={s.footer}>
           <div className={s.total}>{totalCr} total credits</div>
-          <button
-            className={s.submitBtn}
-            onClick={handleSubmit}
-            disabled={submitting || submitted}
-          >
-            {submitted ? '✓ Submitted' : submitting ? 'Submitting…' : 'Submit to registrar →'}
-          </button>
         </div>
       )}
+
     </div>
   )
 }

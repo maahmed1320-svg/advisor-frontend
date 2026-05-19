@@ -4,20 +4,25 @@ import s from './AiChat.module.css'
 const BASE = import.meta.env.VITE_API_URL ?? ''
 
 function buildSystemPrompt(student, inProgress, completed, recommendations) {
-  const available = recommendations.filter(r => r.prereqsMet && !r.isBlocked)
-  const locked    = recommendations.filter(r => !r.prereqsMet && !r.isBlocked)
+  const available  = recommendations.filter(r => r.prereqsMet && !r.isBlocked)
+  const locked     = recommendations.filter(r => !r.prereqsMet && !r.isBlocked)
+  const remaining  = (student.requiredCredits ?? 136) - (student.totalCreditsPassed ?? 0)
+
   return `You are an academic advisor assistant for a university student.
 Here is the student's current academic profile (names are kept private for privacy):
 
 ACADEMIC STATUS:
 - Major: ${student.major}
-- Current Semester: ${student.semester}
-- GPA: ${student.gpa} (trend: ${(student.gpaTrend ?? 0) >= 0 ? '+' : ''}${student.gpaTrend ?? 0} this semester)
-- Earned Credits: ${student.earnedCredits ?? 0} / ${student.requiredCredits ?? 130} required
-- Credits Remaining: ${(student.requiredCredits ?? 130) - (student.earnedCredits ?? 0)}
+- Plan / Chain: ${student.chainKey}
+- CGPA: ${student.cgpa ?? '—'}
+- Campus: ${student.campus ?? '—'}
+- Admit Term: ${student.admitTerm ?? '—'}
+- Status: ${student.status ?? '—'}
+- Credits Passed: ${student.totalCreditsPassed ?? 0} / ${student.requiredCredits ?? 136} required
+- Credits Remaining: ${remaining}
 
 CURRENTLY ENROLLED (${inProgress.length} courses):
-${inProgress.map(c => `- ${c.code}: ${c.name}`).join('\n') || '- None'}
+${inProgress.map(c => `- ${c.code}: ${c.name} (prediction: ${c.prediction})`).join('\n') || '- None'}
 
 COMPLETED COURSES (${completed.length} total):
 ${completed.map(c => `- ${c.code}: ${c.name}`).join('\n') || '- None'}
@@ -34,7 +39,7 @@ Your role: Help the student understand their academic progress, explain prerequi
 function renderText(text) {
   return text.split(/(\*\*[^*]+\*\*)/).map((part, i) =>
     part.startsWith('**') && part.endsWith('**')
-      ? <strong key={i}>{part.slice(2,-2)}</strong>
+      ? <strong key={i}>{part.slice(2, -2)}</strong>
       : <span key={i}>{part}</span>
   )
 }
@@ -56,8 +61,10 @@ export default function AiChat({ student, inProgress, completed, recommendations
     if (open && messages.length === 0) {
       const available = recommendations.filter(r => r.prereqsMet && !r.isBlocked)
       const atRisk    = inProgress.filter(c => !c.passFail)
-      setMessages([{ role: 'assistant', content:
-        `Hi! I'm your academic advisor assistant. I can see your full profile — Semester ${student.semester} of ${student.major}, GPA ${student.gpa}, ${student.earnedCredits} credits completed.\n\nYou have **${available.length} courses available** to enroll in this semester.${atRisk.length > 0 ? `\n\n⚠️ **${atRisk.length} course${atRisk.length>1?'s are':' is'} at risk** — let's talk about that.` : ''}\n\nHow can I help you today?`
+      setMessages([{
+        role: 'assistant',
+        content:
+          `Hi! I'm your academic advisor assistant. I can see your full profile — ${student.major}, CGPA ${student.cgpa ?? '—'}, ${student.totalCreditsPassed ?? 0} credits completed.\n\nYou have **${available.length} courses available** to enroll in this semester.${atRisk.length > 0 ? `\n\n⚠️ **${atRisk.length} course${atRisk.length > 1 ? 's are' : ' is'} at risk** — let's talk about that.` : ''}\n\nHow can I help you today?`,
       }])
     }
   }, [open])
@@ -84,7 +91,10 @@ export default function AiChat({ student, inProgress, completed, recommendations
       if (!res.ok) throw new Error(data.error || 'API error')
       setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${e.message}. Make sure OPENAI_API_KEY is set in Railway backend variables.` }])
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `Something went wrong: ${e.message}. Please try again.`,
+      }])
     } finally { setLoading(false) }
   }
 
@@ -94,8 +104,11 @@ export default function AiChat({ student, inProgress, completed, recommendations
 
   return (
     <>
-      <button className={`${s.fab} ${open ? s.fabOpen : ''}`}
-        onClick={() => setOpen(o => !o)} title="AI Academic Advisor">
+      <button
+        className={`${s.fab} ${open ? s.fabOpen : ''}`}
+        onClick={() => setOpen(o => !o)}
+        title="AI Academic Advisor"
+      >
         {open ? '✕' : '💬'}
       </button>
 
@@ -116,7 +129,7 @@ export default function AiChat({ student, inProgress, completed, recommendations
                 {msg.role === 'assistant' && <div className={s.botIcon}>🎓</div>}
                 <div className={s.bubble}>
                   {msg.content.split('\n').map((line, j) => (
-                    <p key={j} style={{margin: j > 0 ? '5px 0 0' : 0}}>{renderText(line)}</p>
+                    <p key={j} style={{ margin: j > 0 ? '5px 0 0' : 0 }}>{renderText(line)}</p>
                   ))}
                 </div>
               </div>
@@ -133,11 +146,20 @@ export default function AiChat({ student, inProgress, completed, recommendations
           </div>
 
           <div className={s.inputRow}>
-            <textarea ref={inputRef} className={s.input} value={input}
-              onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
-              placeholder="Ask about courses, GPA, what to take next…" rows={2} />
-            <button className={s.sendBtn} onClick={sendMessage}
-              disabled={!input.trim() || loading}>→</button>
+            <textarea
+              ref={inputRef}
+              className={s.input}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKey}
+              placeholder="Ask about courses, CGPA, what to take next…"
+              rows={2}
+            />
+            <button
+              className={s.sendBtn}
+              onClick={sendMessage}
+              disabled={!input.trim() || loading}
+            >→</button>
           </div>
         </div>
       )}

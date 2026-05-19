@@ -1,22 +1,23 @@
 const BASE = import.meta.env.VITE_API_URL ?? ''
 
-export async function fetchStudent(id, overrides = {}, semester = 'spring') {
-  const ovStr = Object.entries(overrides)
-    .map(([k, v]) => `${k}:${v ? 'pass' : 'fail'}`)
-    .join(',')
+// ── Fetch student data (call once, cache raw on client) ───────
+// Returns { raw, result } — store raw in state, pass to compute()
+export async function fetchStudent(id, semester = 'spring') {
   const params = new URLSearchParams({ semester })
-  if (ovStr) params.set('overrides', ovStr)
   const res = await fetch(`${BASE}/api/student/${id}?${params}`)
   if (!res.ok) throw new Error(await res.text())
-  return res.json()
+  return res.json() // { raw, result }
 }
 
-export async function submitCart(studentId, courses, term) {
-  const res = await fetch(`${BASE}/api/cart`, {
+// ── Re-run engine with overrides (zero DB queries) ────────────
+// overrides: { "CSC202": true, "MTT204": false }  (true=pass, false=fail)
+// raw: the raw object received from fetchStudent()
+export async function computeAdvisory(id, raw, overrides = {}) {
+  const res = await fetch(`${BASE}/api/student/${id}/compute`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ student_id: studentId, courses, term }),
+    body: JSON.stringify({ raw, overrides }),
   })
   if (!res.ok) throw new Error(await res.text())
-  return res.json()
+  return res.json() // { result }
 }

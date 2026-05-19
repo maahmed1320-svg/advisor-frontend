@@ -1,21 +1,21 @@
 import { useMemo } from 'react'
 import s from './Calendar.module.css'
 
-const DAYS     = ['Mon','Tue','Wed','Thu','Fri']
-const DAY_MAP  = { Mo:'Mon', Tu:'Tue', We:'Wed', Th:'Thu', Fr:'Fri' }
-const START_H  = 9
-const END_H    = 22
-const HOURS    = END_H - START_H          // 13
-const TOTAL_M  = HOURS * 60              // 780
+const DAYS    = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+const DAY_MAP = { Mo: 'Mon', Tu: 'Tue', We: 'Wed', Th: 'Thu', Fr: 'Fri' }
+const START_H = 9
+const END_H   = 22
+const HOURS   = END_H - START_H   // 13
+const TOTAL_M = HOURS * 60        // 780
 
 const PALETTE = [
-  { bg:'#ececea', br:'#8a8880', tx:'#1a1a18' },
-  { bg:'#e4f0e4', br:'#5a8e5a', tx:'#0a280a' },
-  { bg:'#e4ecf6', br:'#5a72be', tx:'#0a1848' },
-  { bg:'#f6ece0', br:'#be9040', tx:'#483008' },
-  { bg:'#eee4f2', br:'#9060a8', tx:'#280a36' },
-  { bg:'#e0f2f6', br:'#3890a8', tx:'#082838' },
-  { bg:'#f6e4e4', br:'#be5858', tx:'#380808' },
+  { bg: '#ececea', br: '#8a8880', tx: '#1a1a18' },
+  { bg: '#e4f0e4', br: '#5a8e5a', tx: '#0a280a' },
+  { bg: '#e4ecf6', br: '#5a72be', tx: '#0a1848' },
+  { bg: '#f6ece0', br: '#be9040', tx: '#483008' },
+  { bg: '#eee4f2', br: '#9060a8', tx: '#280a36' },
+  { bg: '#e0f2f6', br: '#3890a8', tx: '#082838' },
+  { bg: '#f6e4e4', br: '#be5858', tx: '#380808' },
 ]
 
 function toMins(t) {
@@ -27,7 +27,10 @@ function parseSlot(slot) {
   if (!slot || slot === 'TBA') return null
   const parts = slot.split(' - ')
   if (parts.length < 2) return null
-  return { start: toMins(parts[0]), end: toMins(parts[1]) }
+  const start = toMins(parts[0])
+  const end   = toMins(parts[1])
+  if (isNaN(start) || isNaN(end)) return null
+  return { start, end }
 }
 
 function parseDays(days) {
@@ -44,29 +47,55 @@ function parseDays(days) {
 
 const hourLabel = h => h === 12 ? '12pm' : h > 12 ? `${h - 12}pm` : `${h}am`
 
-export default function Calendar({ cart, allCourses }) {
-  const cMap = useMemo(
-    () => Object.fromEntries(allCourses.map(c => [c.code, c])),
-    [allCourses]
-  )
+// Extract all time slots from a cart item.
+// Prefers section data (user-selected), falls back to top-level days/timeSlot.
+function getSlotsFromItem(item) {
+  const slots = []
 
-  // blocks[day] = array of { code, name, instructor, start, end, color }
+  if (item.section) {
+    if (item.section.days && item.section.time_slot)
+      slots.push({ days: item.section.days, time: item.section.time_slot, instructor: item.section.instructor })
+    if (item.section.days2 && item.section.time_slot2 && item.section.days2 !== 'TBA')
+      slots.push({ days: item.section.days2, time: item.section.time_slot2, instructor: item.section.instructor2 })
+  } else if (item.days && item.timeSlot) {
+    slots.push({ days: item.days, time: item.timeSlot, instructor: item.instructor })
+  }
+
+  return slots
+}
+
+export default function Calendar({ cart }) {
+  // cart: array of { code, name, credits, days, timeSlot, instructor, section, ... }
+
   const blocksByDay = useMemo(() => {
     const map = {}
     DAYS.forEach(d => { map[d] = [] })
-    cart.forEach((code, idx) => {
-      const c = cMap[code]
-      if (!c) return
-      const time = parseSlot(c.time_slot)
-      const days = parseDays(c.days)
-      if (!time || !days.length) return
+
+    cart.forEach((item, idx) => {
       const color = PALETTE[idx % PALETTE.length]
-      days.forEach(day => {
-        if (map[day]) map[day].push({ code, name: c.name, instructor: c.instructor, ...time, color })
+      const slots = getSlotsFromItem(item)
+
+      slots.forEach(slot => {
+        const time = parseSlot(slot.time)
+        const days = parseDays(slot.days)
+        if (!time || !days.length) return
+
+        days.forEach(day => {
+          if (!map[day]) return
+          map[day].push({
+            code:       item.code,
+            name:       item.name,
+            instructor: slot.instructor ?? null,
+            start:      time.start,
+            end:        time.end,
+            color,
+          })
+        })
       })
     })
+
     return map
-  }, [cart, cMap])
+  }, [cart])
 
   const hasAny = DAYS.some(d => blocksByDay[d].length > 0)
 
@@ -89,30 +118,21 @@ export default function Calendar({ cart, allCourses }) {
           <div key={day} className={s.dayCol}>
             <div className={s.dayHd}>{day}</div>
             <div className={s.dayBody}>
-              {/* Hour grid lines */}
+
               {Array.from({ length: HOURS }, (_, i) => (
-                <div
-                  key={i}
-                  className={s.hourLine}
-                  style={{ top: `${(i / HOURS) * 100}%` }}
-                />
+                <div key={i} className={s.hourLine}
+                  style={{ top: `${(i / HOURS) * 100}%` }} />
               ))}
-              {/* Half-hour lines */}
               {Array.from({ length: HOURS }, (_, i) => (
-                <div
-                  key={`h${i}`}
-                  className={s.halfLine}
-                  style={{ top: `${((i + 0.5) / HOURS) * 100}%` }}
-                />
+                <div key={`h${i}`} className={s.halfLine}
+                  style={{ top: `${((i + 0.5) / HOURS) * 100}%` }} />
               ))}
-              {/* Course blocks */}
+
               {blocksByDay[day].map((b, i) => {
                 const top    = ((b.start - START_H * 60) / TOTAL_M) * 100
                 const height = ((b.end - b.start) / TOTAL_M) * 100
                 return (
-                  <div
-                    key={i}
-                    className={s.block}
+                  <div key={i} className={s.block}
                     style={{
                       top:         `${top.toFixed(3)}%`,
                       height:      `${height.toFixed(3)}%`,
@@ -131,6 +151,7 @@ export default function Calendar({ cart, allCourses }) {
                   </div>
                 )
               })}
+
             </div>
           </div>
         ))}
