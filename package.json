@@ -6,16 +6,18 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "start": "vite"
+    "preview": "vite preview --host 0.0.0.0 --port $PORT",
+    "start": "vite preview --host 0.0.0.0 --port $PORT"
   },
   "dependencies": {
     "lucide-react": "^1.17.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "three": "^0.184.0"
-  },
-  "devDependencies": {
+    "three": "^0.184.0",
     "@vitejs/plugin-react": "^4.7.0",
     "vite": "^5.4.21"
+  },
+  "devDependencies": {
+    
   }
 }
