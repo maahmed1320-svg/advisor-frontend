@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import s from './AiChat.module.css'
+const API_DOMAIN = import.meta.env.VITE_API_URL || "localhost:3001";
+const BASE = API_DOMAIN.startsWith("http") 
+  ? API_DOMAIN 
+  : `https://${API_DOMAIN}`;
 
-const BASE = import.meta.env.VITE_API_URL ?? ''
 
 // 💡 NEW LOGIC: Flattened specialty list array for quick lookups
 const MejorElectiveList = [
@@ -147,17 +150,26 @@ export default function AiChat({ student, inProgress, completed, recommendations
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
         }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'API error')
+
+      // SAFETY CHECK: Handle HTML error pages vs JSON responses
+      const contentType = res.headers.get("content-type");
+      const data = (contentType && contentType.includes("application/json")) 
+        ? await res.json() 
+        : null;
+
+      if (!res.ok) {
+        throw new Error(data?.error || `Server error: ${res.status}`);
+      }
+
       setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
     } catch (e) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: `Something went wrong: ${e.message}. Please try again.`,
+        content: `Something went wrong: ${e.message}. Please check your connection.`,
       }])
     } finally { setLoading(false) }
   }
-
+  
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }

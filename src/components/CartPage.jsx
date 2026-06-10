@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react'
 import s from './CartPage.module.css'
 
-const BASE = import.meta.env.VITE_API_URL ?? ''
+const API_DOMAIN = import.meta.env.VITE_API_URL || "localhost:3001";
+const BASE = API_DOMAIN.startsWith("http") 
+  ? API_DOMAIN 
+  : `https://${API_DOMAIN}`;
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
 const START_H = 9
@@ -168,7 +171,15 @@ export default function CartPage({ cartItems = [], onRemove, onBack, studentId }
           }))
         }),
       })
-      if (!res.ok) throw new Error((await res.json()).error ?? 'Submission failed')
+      
+      // SAFE CHECK: Ensure it's actually JSON before parsing
+      const contentType = res.headers.get("content-type");
+      if (!res.ok) {
+        const errorMsg = (contentType && contentType.includes("application/json")) 
+          ? (await res.json()).error 
+          : "Submission failed: Server returned an error";
+        throw new Error(errorMsg);
+      }
       setSubmitted(true)
     } catch (e) { setSubmitError(e.message) }
     finally { setSubmitLoading(false) }
@@ -182,7 +193,15 @@ export default function CartPage({ cartItems = [], onRemove, onBack, studentId }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ codes: cartItems.map(i => i.code) }),
       })
-      if (!res.ok) throw new Error((await res.json()).error ?? 'Withdrawal failed')
+      
+      const contentType = res.headers.get("content-type");
+      if (!res.ok) {
+        const errorMsg = (contentType && contentType.includes("application/json")) 
+          ? (await res.json()).error 
+          : "Withdrawal failed: Server returned an error";
+        throw new Error(errorMsg);
+      }
+      
       cartItems.forEach(item => onRemove(item.code))
       setSubmitted(false)
       setActiveTab(null)
