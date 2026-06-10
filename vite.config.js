@@ -12,19 +12,12 @@ export default defineConfig({
       },
     },
   },
-  preview: {
-    host: '0.0.0.0',
-    port: 4173,
-    allowedHosts: true,
-  },
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3001', // your backend port
+        target: 'http://localhost:3001',
         changeOrigin: true,
-        timeout: 60000,       // 💡 Wait up to 60s for proxy read
-        proxyTimeout: 60000,  // 💡 Wait up to 60s for proxy connection
-      }
+      },
     },
   },
 })
