@@ -1,5 +1,5 @@
 // Clean the base URL by removing any trailing slash
-const BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
+const BASE = "https://your-backend-domain.up.railway.app";
 
 export async function fetchStudent(id) {
   const res = await fetch(`${BASE}/api/student/${id}`);
