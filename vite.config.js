@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+
   build: {
     rollupOptions: {
       output: {
@@ -12,6 +13,14 @@ export default defineConfig({
       },
     },
   },
+
+  preview: {
+    allowedHosts: [
+      'advisor-frontend-production.up.railway.app'
+    ],
+    host: true
+  },
+
   server: {
     proxy: {
       '/api': {
