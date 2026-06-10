@@ -4,9 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "start": "npx serve dist -l 3001"
+    "build": "npx vite build",
+    "start": "npx vite preview" 
   },
   "dependencies": {
     "lucide-react": "^1.17.0",
