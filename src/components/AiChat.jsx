@@ -3,37 +3,97 @@ import s from './AiChat.module.css'
 
 const BASE = import.meta.env.VITE_API_URL ?? ''
 
-function buildSystemPrompt(student, inProgress, completed, recommendations) {
-  const available  = recommendations.filter(r => r.prereqsMet && !r.isBlocked)
-  const locked     = recommendations.filter(r => !r.prereqsMet && !r.isBlocked)
-  const remaining  = (student.requiredCredits ?? 136) - (student.totalCreditsPassed ?? 0)
+// 💡 NEW LOGIC: Flattened specialty list array for quick lookups
+const MejorElectiveList = [
+  { code: "CME460", name: "Natural Gas Processing", track: "Gas Processing & Petrochemicals" },
+  { code: "CME461", name: "Petroleum Refining Process", track: "Gas Processing & Petrochemicals" },
+  { code: "CME462", name: "Chemical Process Industries", track: "Gas Processing & Petrochemicals" },
+  { code: "CME463", name: "Corrosion Engineer", track: "Gas Processing & Petrochemicals" },
+  { code: "CME464", name: "Chemical Process Safety", track: "Gas Processing & Petrochemicals" },
+  { code: "CME465", name: "Process Heat Transfer", track: "Gas Processing & Petrochemicals" },
+  { code: "CME470", name: "Introduction To Polymer Science And Technology", track: "Polymer & Materials" },
+  { code: "CME471", name: "Polymer Chemistry And Reaction Engineering", track: "Polymer & Materials" },
+  { code: "CME472", name: "Polymer properties, testing and characterization", track: "Polymer & Materials" },
+  { code: "CME473", name: "Polymer Processing And Materials Design", track: "Polymer & Materials" },
+  { code: "CME480", name: "Water Technology And Membrane Processes", track: "Water Treatments & Desalination" },
+  { code: "CME481", name: "Thermal Desalination", track: "Water Treatments & Desalination" },
+  { code: "CME482", name: "Membrane Desalination", track: "Water Treatments & Desalination" },
+  { code: "CME483", name: "Industrial Wastewater Treatment", track: "Water Treatments & Desalination" },
+  { code: "CME484", name: "Industrial Water Pollution And Control", track: "Water Treatments & Desalination" },
+  { code: "CME490", name: "Chemical Engineering Biology", track: "Biotechnology" },
+  { code: "CME491", name: "Biochemical Engineering", track: "Biotechnology" },
+  { code: "CME492", name: "Biochemical Treatment", track: "Biotechnology" },
+  { code: "CME493", name: "Biofuels Technology", track: "Biotechnology" },
+]
 
-  return `You are an academic advisor assistant for a university student.
-Here is the student's current academic profile (names are kept private for privacy):
+function formatGroupedMeetings(recCourse) {
+  // Read section array strings dynamically out of recommendations
+  const sections = recCourse.sections || [];
+  if (sections.length === 0) return 'No section time schedules available';
 
-ACADEMIC STATUS:
+  return sections.map((sec, idx) => {
+    const days = [];
+    if (sec.Mon) days.push('Mon');
+    if (sec.Tues) days.push('Tues');
+    if (sec.Wed) days.push('Wed');
+    if (sec.Thurs) days.push('Thurs');
+    if (sec.Fri) days.push('Fri');
+    const dayStr = days.length > 0 ? days.join('/') : 'TBA';
+    const timeStr = sec.mtg_start && sec.mtg_end ? `${sec.mtg_start.slice(0,5)}-${sec.mtg_end.slice(0,5)}` : 'TBA';
+    
+    return `   [Section Nbr: ${sec.class_nbr || 'TBA'}] ${dayStr} @ ${timeStr} (${sec.campus || 'AD'} Campus, Rm: ${sec.room || 'TBA'}) - Instructor: ${sec.first_name ?? ''} ${sec.last_name ?? ''}`;
+  }).join('\n');
+}
+
+function buildSystemPrompt(student, inProgress, completed, recommendations, prereqEdges) {
+  const available = recommendations.filter(r => r.prereqsMet && !r.isBlocked)
+  const locked    = recommendations.filter(r => !r.prereqsMet && !r.isBlocked)
+  const remaining = (student.requiredCredits ?? 136) - (student.totalCreditsPassed ?? 0)
+  
+  const completedSet = new Set((completed || []).map(c => c.code));
+
+  // Build the context string for the 19 major electives and their prerequisites
+  const majorElectivesContext = MejorElectiveList.map(m => {
+    const prereqs = prereqEdges?.[m.code] || [];
+    const isPassed = completedSet.has(m.code);
+    const prereqsFulfilled = prereqs.length === 0 || prereqs.every(p => completedSet.has(p));
+    const prereqListStr = prereqs.length > 0 ? prereqs.join(', ') : 'None';
+    return `- ${m.code}: ${m.name} (${m.track})\n  * Prerequisites: ${prereqListStr} | Prereqs Met: ${prereqsFulfilled ? 'YES' : 'NO'} | Course Passed: ${isPassed ? 'YES' : 'NO'}`;
+  }).join('\n');
+
+  return `You are an expert academic advisor assistant for a university student.
+Here is the student's comprehensive academic profile and timetable framework (names are kept private for privacy):
+
+ACADEMIC METRICS:
 - Major: ${student.major}
-- Plan / Chain: ${student.chainKey}
-- CGPA: ${student.cgpa ?? '—'}
-- Campus: ${student.campus ?? '—'}
-- Admit Term: ${student.admitTerm ?? '—'}
-- Status: ${student.status ?? '—'}
-- Credits Passed: ${student.totalCreditsPassed ?? 0} / ${student.requiredCredits ?? 136} required
-- Credits Remaining: ${remaining}
+- Plan Layout ID: ${student.chainKey}
+- Current CGPA: ${student.cgpa ?? '—'}
+- Active Campus Base: ${student.campus ?? '—'}
+- Admission Term Group: ${student.admitTerm ?? '—'}
+- Registration Status: ${student.status ?? '—'}
+- Total Passed Courses: ${completed.length} passed
+- Total Credits Completed: ${student.totalCreditsPassed ?? 0} / ${student.requiredCredits ?? 136} required
+- Remaining Credits Left: ${remaining} cr
 
-CURRENTLY ENROLLED (${inProgress.length} courses):
-${inProgress.map(c => `- ${c.code}: ${c.name} (prediction: ${c.prediction})`).join('\n') || '- None'}
+CURRENTLY ENROLLED / PASSING COURSES (${inProgress.length} items):
+${inProgress.map(c => `- ${c.code}: ${c.name} (Academic Prediction Slates: ${c.prediction || 'Stable'})`).join('\n') || '- None'}
 
-COMPLETED COURSES (${completed.length} total):
-${completed.map(c => `- ${c.code}: ${c.name}`).join('\n') || '- None'}
+COMPLETED COURSES WITH OFFICIAL HISTORICAL GRADES (${completed.length} entries):
+${completed.map(c => `- ${c.code}: ${c.name} [Grade Earned: ${c.grade ?? 'Passed'}] (Term: ${c.term ?? '—'})`).join('\n') || '- None'}
 
-AVAILABLE TO ENROLL NOW (${available.length} courses — prereqs met):
-${available.map(r => `- ${r.code}: ${r.name} (${r.credits} cr) — unlocks ${r.downstreamUnlocks} future courses`).join('\n') || '- None available this semester'}
+RECOMMENDED / AVAILABLE COURSES FOR NEXT ENROLLMENT (${available.length} options — Prereqs Satisfied):
+${available.map(r => `- ${r.code}: ${r.name} (${r.credits} cr) — Unlocks: ${r.downstreamUnlocks} future courses\n${formatGroupedMeetings(r)}`).join('\n') || '- None available this semester'}
 
-LOCKED COURSES (prereqs not yet met):
-${locked.slice(0, 8).map(r => `- ${r.code}: ${r.name} — needs: ${r.missingPrereqs?.join(', ')}`).join('\n') || '- None'}
+LOCKED CHECKLIST TARGETS (Prerequisites Pending):
+${locked.slice(0, 10).map(r => `- ${r.code}: ${r.name} — Missing Prerequisite Chain Requirements: ${r.missingPrereqs?.join(', ')}`).join('\n') || '- None'}
 
-Your role: Help the student understand their academic progress, explain prerequisites, suggest which courses to prioritize, warn about risks, and answer questions about their study plan. Be concise, friendly, and practical. Never reveal or guess the student's name.`
+🔬 MAJOR SPECIALTY TRACK ELECTIVES BLUEPRINT & PREREQUISITE MATRIX:
+${majorElectivesContext}
+
+Your role:
+1. Help the student analyze their current parameters, explain prerequisite blocks, and outline elective paths.
+2. If the student asks about scheduling, cross-reference day and time parameters from the RECOMMENDED section.
+3. Be professional, friendly, and practical. Never reveal or guess the student's name.`
 }
 
 function renderText(text) {
@@ -44,7 +104,7 @@ function renderText(text) {
   )
 }
 
-export default function AiChat({ student, inProgress, completed, recommendations }) {
+export default function AiChat({ student, inProgress, completed, recommendations, prereqEdges }) {
   if (!student || !inProgress || !completed || !recommendations) return null
 
   const [open,     setOpen]     = useState(false)
@@ -64,7 +124,7 @@ export default function AiChat({ student, inProgress, completed, recommendations
       setMessages([{
         role: 'assistant',
         content:
-          `Hi! I'm your academic advisor assistant. I can see your full profile — ${student.major}, CGPA ${student.cgpa ?? '—'}, ${student.totalCreditsPassed ?? 0} credits completed.\n\nYou have **${available.length} courses available** to enroll in this semester.${atRisk.length > 0 ? `\n\n⚠️ **${atRisk.length} course${atRisk.length > 1 ? 's are' : ' is'} at risk** — let's talk about that.` : ''}\n\nHow can I help you today?`,
+          `Hi! I'm your academic advisor AI assistant. I have reviewed your profile — ${student.major}, CGPA ${student.cgpa ?? '—'}, ${student.totalCreditsPassed ?? 0} credits completed.\n\nYou have **${available.length} courses available** with active schedules ready for next semester enrollment.${atRisk.length > 0 ? `\n\n⚠️ **${atRisk.length} course${atRisk.length > 1 ? 's are' : ' is'} currently flagged at risk** — let's look over your study options.` : ''}\n\nHow can I assist you with your curriculum path today?`,
       }])
     }
   }, [open])
@@ -83,7 +143,7 @@ export default function AiChat({ student, inProgress, completed, recommendations
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          systemPrompt: buildSystemPrompt(student, inProgress, completed, recommendations),
+          systemPrompt: buildSystemPrompt(student, inProgress, completed, recommendations, prereqEdges),
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
         }),
       })

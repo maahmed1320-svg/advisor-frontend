@@ -13,7 +13,7 @@
   --red:     #b91c1c;
   --red-bg:  #fef2f2;
   --red-border: #fecaca;
-  --font: 'Georgia', 'Times New Roman', serif;
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'SF Mono', 'Fira Code', monospace;
   --radius: 6px;
   --radius-lg: 10px;

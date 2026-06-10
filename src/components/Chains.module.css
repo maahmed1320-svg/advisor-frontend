@@ -66,3 +66,28 @@
   letter-spacing: 0.05em;
   font-weight: 500;
 }
+
+/* ── Chains responsive ── */
+.chainsContainer {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .wrap {
+    padding: 4px 0 8px;
+  }
+
+  .legend {
+    gap: 6px;
+    font-size: 13px;
+  }
+
+  .hoverInfo {
+    font-size: 13px;
+  }
+
+  .hoveredCode {
+    font-size: 13px;
+  }
+}

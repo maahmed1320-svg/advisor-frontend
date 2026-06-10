@@ -19,7 +19,12 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': 'http://localhost:3001',
+      '/api': {
+        target: 'http://localhost:3001', // your backend port
+        changeOrigin: true,
+        timeout: 60000,       // 💡 Wait up to 60s for proxy read
+        proxyTimeout: 60000,  // 💡 Wait up to 60s for proxy connection
+      }
     },
   },
 })

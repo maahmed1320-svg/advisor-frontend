@@ -1,28 +1,31 @@
 .page { display:flex; flex-direction:column; height:100%; overflow:hidden; }
 
-/* Top bar */
+/* Top bar — Scaled padding */
 .topbar {
-  display:flex; align-items:center; gap:12px; padding:7px 14px;
+  display:flex; align-items:center; gap:16px; padding:12px 20px;
   border-bottom:1px solid #d8d5cc; flex-shrink:0; flex-wrap:wrap;
   background:#f5f3ee;
 }
 .backBtn {
-  font-size:17px; padding:4px 10px; border:0.5px solid #bbb;
+  font-size:18px; padding:6px 14px; border:0.5px solid #bbb;
   border-radius:4px; background:#fff; cursor:pointer; color:#444;
   white-space:nowrap;
 }
 .backBtn:hover { background:#eee; }
-.foundCount { font-size:15px; color:#333; white-space:nowrap; }
-.topRight { display:flex; gap:8px; align-items:center; margin-left:auto; }
+.foundCount { font-size:17px; font-weight: 500; color:#333; white-space:nowrap; }
+.topRight { display:flex; gap:12px; align-items:center; margin-left:auto; }
+
 .search {
-  border:0.5px solid #ccc; border-radius:4px; padding:5px 10px;
-  font-size:17px; width:180px; outline:none; background:#fff; color:#222;
+  border:0.5px solid #ccc; border-radius:6px; padding:8px 14px;
+  font-size:18px; width:220px; outline:none; background:#fff; color:#222;
 }
 .search::placeholder { color:#bbb; }
-.filters { display:flex; gap:3px; }
+
+.filters { display:flex; gap:6px; }
 .filterBtn {
-  font-size:16px; padding:4px 12px; border:0.5px solid #ccc;
+  font-size:16px; padding:8px 18px; border:0.5px solid #ccc;
   border-radius:99px; background:#fff; color:#777; cursor:pointer;
+  font-weight: 500;
 }
 .filterActive { background:#1a3a6a !important; color:#fff !important; border-color:#1a3a6a !important; }
 
@@ -34,34 +37,40 @@
 .cardBlocked { opacity:0.45; }
 .cardInCart { }
 
-/* Header */
+/* Main Course Header Row — Scaled significantly */
 .hdr {
-  display:flex; align-items:center; gap:6px; padding:7px 14px;
+  display:flex; align-items:center; gap:10px; padding:16px 20px; /* Increased padding */
   background:#dce8f5; border-top:1px solid #c4d8ee;
   cursor:pointer; user-select:none; flex-wrap:wrap;
 }
 .hdr:hover { background:#cfdff0; }
 .hdrOpen { background:#cfdff0; }
-.tri { font-size:15px; color:#3a6090; flex-shrink:0; }
-.hCode { font-size:15px; font-weight:600; color:#1a4080; white-space:nowrap; }
-.hSep { color:#3a6090; font-size:15px; }
-.hName { font-size:15px; color:#1a3060; flex:1; min-width:0; }
-.hRight { display:flex; align-items:center; gap:7px; margin-left:auto; flex-wrap:wrap; }
+.tri { font-size:18px; color:#3a6090; flex-shrink:0; }
+
+/* Course Code & Title typography */
+.hCode { font-size:18px; font-weight:700; color:#1a4080; white-space:nowrap; }
+.hSep { color:#3a6090; font-size:18px; font-weight: bold; }
+.hName { font-size:18px; font-weight: 500; color:#1a3060; flex:1; min-width:0; }
+
+.hRight { display:flex; align-items:center; gap:12px; margin-left:auto; flex-wrap:wrap; }
 .cr {
-  font-size:16px; color:#2a4a70; background:#c8daf0;
-  padding:2px 8px; border-radius:99px; white-space:nowrap;
+  font-size:16px; font-weight: 600; color:#1a4a70; background:#c8daf0;
+  padding:4px 12px; border-radius:99px; white-space:nowrap;
 }
 .badge {
-  font-size:15px; padding:2px 8px; border-radius:99px;
-  white-space:nowrap; letter-spacing:0.03em;
+  font-size:15px; padding:4px 10px; border-radius:99px;
+  white-space:nowrap; letter-spacing:0.03em; font-weight: 500;
 }
 .badgeBlocked { background:#fee2e2; color:#b91c1c; }
 .badgePending { background:#f0ede4; color:#888; border:0.5px solid #ccc; }
 .badgeSem     { background:#1a3a6a; color:#fff; }
+
+/* Main Header "+ Add" Button — Scaled up */
 .addBtn {
-  font-size:16px; padding:4px 14px; border:1px solid #3a6090;
-  border-radius:4px; background:#fff; color:#3a6090;
-  cursor:pointer; white-space:nowrap; font-weight:500;
+  font-size:17px; padding:8px 20px; border:1.5px solid #3a6090;
+  border-radius:6px; background:#fff; color:#3a6090;
+  cursor:pointer; white-space:nowrap; font-weight:600;
+  transition: all 0.15s ease;
 }
 .addBtn:hover { background:#3a6090; color:#fff; }
 .addBtnIn { background:#1a3a6a !important; color:#fff !important; border-color:#1a3a6a !important; }
@@ -69,61 +78,72 @@
 /* Sections wrap */
 .secWrap { background:#fff; }
 
-/* Column headers */
-.colHdr {
-  display:grid;
-  grid-template-columns:30px 60px 80px 1fr 90px 1fr 120px 44px;
-  padding:5px 14px; background:#ece9df;
-  border-bottom:1px solid #d8d5cc; border-top:1px solid #d8d5cc;
-  font-size:16px; font-weight:600; color:#555;
-}
-
-/* Section block */
+/* Section block rows container */
 .secBlock {
-  border-bottom:0.5px solid #eee; cursor:pointer;
+  border-bottom:1px solid #f0ede6; cursor:pointer;
 }
 .secBlock:hover { background:#f8f7f3; }
 .secSelected { background:#f0f6ff !important; }
 .secBlock:last-child { border-bottom:none; }
 
-/* Section rows */
-.secRow {
-  display:grid;
-  grid-template-columns:30px 60px 80px 1fr 90px 1fr 120px 44px;
-  padding:7px 14px; align-items:start; font-size:17px; color:#333;
+/* Column headers grid layout — Enlarged sizing */
+.colHdr {
+  display: grid;
+  grid-template-columns: 35px 100px 150px 100px 2.2fr 100px 1.8fr 150px 70px;
+  gap: 16px;
+  padding: 12px 20px; 
+  background: #ece9df;
+  border-bottom: 1px solid #d8d5cc; 
+  border-top: 1px solid #d8d5cc;
+  font-size: 16px; 
+  font-weight: 700; 
+  color: #444;
+  align-items: center;
 }
-.secRow2 { padding-top:0; color:#555; }
 
-/* Radio */
+/* Section individual data grid rows — Extra inner padding */
+.secRow {
+  display: grid;
+  grid-template-columns: 35px 100px 150px 100px 2.2fr 100px 1.8fr 150px 70px;
+  gap: 16px;
+  padding: 18px 20px; /* Bigger spacing inside the row items */
+  align-items: center; 
+  font-size: 16px; 
+  color: #333;
+}
+.secRow2 { padding-top: 0; color: #555; }
+
+/* Radio Buttons size */
 .radioOn {
-  display:inline-block; width:13px; height:13px; border-radius:50%;
-  border:3px solid #1a3a6a; background:#fff; flex-shrink:0; margin-top:2px;
+  display:inline-block; width:16px; height:16px; border-radius:50%;
+  border:4px solid #1a3a6a; background:#fff; flex-shrink:0;
 }
 .radioOff {
-  display:inline-block; width:13px; height:13px; border-radius:50%;
-  border:1.5px solid #bbb; background:#fff; flex-shrink:0; margin-top:2px;
+  display:inline-block; width:16px; height:16px; border-radius:50%;
+  border:2px solid #bbb; background:#fff; flex-shrink:0;
 }
 
-.cSel    { display:flex; align-items:flex-start; padding-top:1px; }
+.cSel    { display:flex; align-items:center; }
 .cClass  { }
 .cSec    { }
-.cDT     { }
-.cRoom   { }
-.cInst   { font-style:italic; }
-.cDates  { font-size:16px; color:#777; line-height:1.5; }
-.cStat   { display:flex; align-items:flex-start; justify-content:center; padding-top:2px; }
+.cCr     { font-weight: 600; color: #222; } 
+.cDT     { line-height: 1.4; }
+.cRoom   { line-height: 1.4; }
+.cInst   { font-style:italic; font-weight: 500; }
+.cDates  { font-size:15px; color:#555; line-height:1.5; }
+.cStat   { display:flex; align-items:center; justify-content:center; }
 
-.classNum { color:#2a5a9a; font-size:17px; text-decoration:underline; }
-.secNum   { color:#2a5a9a; font-size:17px; font-weight:500; }
-.semTag   { font-size:15px; color:#999; letter-spacing:0.05em; }
+.classNum { color:#2a5a9a; font-size:17px; font-weight: 600; text-decoration:underline; }
+.secNum   { color:#2a5a9a; font-size:17px; font-weight:600; }
+.semTag   { font-size:15px; color:#888; font-weight: 500; letter-spacing:0.03em; }
 
-/* Status dot */
-.dot { width:14px; height:14px; border-radius:50%; flex-shrink:0; border:1.5px solid transparent; }
+/* Status dot scale */
+.dot { width:16px; height:16px; border-radius:50%; flex-shrink:0; border:2px solid transparent; }
 .dotOpen   { background:#22c55e; border-color:#16a34a; }
-.dotClosed { background:#fff; border:2px solid #9ca3af; }
+.dotClosed { background:#fff; border:2.5px solid #9ca3af; }
 .dotWait   { background:#f59e0b; border-color:#d97706; }
 
-.empty { padding:3rem; text-align:center; font-size:15px; color:#999; font-style:italic; }
+.empty { padding:4rem; text-align:center; font-size:17px; color:#999; font-style:italic; }
 
 .addBtnDisabled {
   border-color: var(--gray-200, #ddd) !important;
@@ -132,9 +152,9 @@
   cursor: not-allowed !important;
 }
 
-/* Locked courses — prereqs not met, shown at bottom */
+/* Locked courses layout styling */
 .cardLocked {
-  opacity: 0.45;
+  opacity: 0.5;
   background: #f5f3ee !important;
 }
 .cardLocked .hdr {
@@ -143,18 +163,19 @@
 }
 .cardLocked .hCode,
 .cardLocked .hName {
-  color: #999 !important;
+  color: #888 !important;
 }
 
-/* Unlock score badge */
+/* Unlock score badge scale */
 .unlockScore {
-  font-size: 12px;
-  color: var(--gray-400, #999);
+  font-size: 13px;
+  font-weight: 600;
+  color: #777;
   background: var(--gray-50, #f5f3ee);
-  border: 0.5px solid var(--gray-200, #ddd);
+  border: 1px solid var(--gray-200, #ddd);
   border-radius: 99px;
-  padding: 1px 7px;
-  margin-left: 6px;
+  padding: 3px 9px;
+  margin-left: 8px;
   white-space: nowrap;
   flex-shrink: 0;
   font-family: monospace;

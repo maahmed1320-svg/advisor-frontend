@@ -1,22 +1,22 @@
 const BASE = import.meta.env.VITE_API_URL ?? ''
-
-// ── Fetch student data (call once, cache raw on client) ───────
-// Returns { raw, result } — store raw in state, pass to compute()
-export async function fetchStudent(id, semester = 'spring') {
-  const params = new URLSearchParams({ semester })
-  const res = await fetch(`${BASE}/api/student/${id}?${params}`)
-  if (!res.ok) throw new Error(await res.text())
-  return res.json() // { raw, result }
+export async function fetchStudent(id) {
+  
+  const res = await fetch(`${BASE}/api/student/${id}`)
+  if (!res.ok) {
+    const body = await res.json()
+    throw new Error(body.error)    
+  }
+  return res.json()
 }
 
 // ── Re-run engine with overrides (zero DB queries) ────────────
 // overrides: { "CSC202": true, "MTT204": false }  (true=pass, false=fail)
 // raw: the raw object received from fetchStudent()
-export async function computeAdvisory(id, raw, overrides = {}) {
+export async function computeAdvisory(id, overrides = {}) {
   const res = await fetch(`${BASE}/api/student/${id}/compute`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ raw, overrides }),
+    body: JSON.stringify({ overrides }),
   })
   if (!res.ok) throw new Error(await res.text())
   return res.json() // { result }

@@ -4,36 +4,39 @@
 .topbar {
   display: flex;
   align-items: center;
-  border-bottom: 0.5px solid var(--gray-200);
-  height: 44px;
+  background: #1e1e1e; 
+  border-bottom: 1px solid #333; 
+  height: 56px; /* 💡 Increased from 44px to fit larger text cleanly */
   flex-shrink: 0;
 }
 
 .brand {
-  font-size: 16px;
+  font-size: 19px; /* 💡 Increased from 16px */
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--gray-400);
-  padding: 0 1.1rem;
-  border-right: 0.5px solid var(--gray-200);
+  color: #ffffff; 
+  padding: 0 1.2rem;
+  border-right: 1px solid #333;
   height: 100%;
   display: flex;
   align-items: center;
+  font-weight: 700;
 }
 
 .studentName {
-  font-size: 16px;
+  font-size: 19px; /* 💡 Increased from 16px */
   font-style: italic;
-  padding: 0 1.1rem;
+  color: #e5e5e5; 
+  padding: 0 1.2rem;
   flex: 1;
 }
 
 .majorPill {
-  font-size: 16px;
-  color: var(--gray-400);
-  padding: 0 1.1rem;
-  border-left: 0.5px solid var(--gray-200);
-  border-right: 0.5px solid var(--gray-200);
+  font-size: 18px; /* 💡 Increased from 16px */
+  color: #aaa;
+  padding: 0 1.2rem;
+  border-left: 1px solid #333;
+  border-right: 1px solid #333;
   height: 100%;
   display: flex;
   align-items: center;
@@ -45,14 +48,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 1.1rem;
-  border-right: 0.5px solid var(--gray-200);
+  padding: 0 1.2rem;
+  border-right: 1px solid #333;
   height: 100%;
 }
 
 .semLabel {
-  font-size: 16px;
-  color: var(--gray-400);
+  font-size: 18px; /* 💡 Increased from 16px */
+  color: #aaa;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -60,39 +63,48 @@
 
 .semBtns {
   display: flex;
-  border: 0.5px solid var(--gray-200);
+  border: 1px solid #444;
   border-radius: 99px;
   overflow: hidden;
 }
 
 .semBtn {
-  font-size: 16px;
-  padding: 3px 10px;
+  font-size: 18px; /* 💡 Increased from 16px */
+  padding: 4px 14px;
   border: none;
   border-radius: 0;
   background: transparent;
-  color: var(--gray-400);
+  color: #bbb;
   letter-spacing: 0.04em;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
-.semBtn:hover { background: var(--gray-50); }
+.semBtn:hover { background: #2a2a2a; color: #fff; }
 .semActive {
-  background: var(--black) !important;
-  color: var(--white) !important;
+  background: #ffffff !important;
+  color: #111111 !important;
 }
 
+/* Sign out button */
 .logoutBtn {
-  font-size: 16px;
-  color: var(--gray-400);
+  font-size: 18px; /* 💡 Increased from 16px */
+  color: #aaa; 
   border: none;
   border-radius: 0;
   background: transparent;
-  padding: 0 1.1rem;
+  padding: 0 1.2rem;
   height: 100%;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
 }
-.logoutBtn:hover { color: var(--black); background: var(--gray-50); }
+.logoutBtn:hover { 
+  color: #ffffff; 
+  background: #2a2a2a; 
+}
 
 /* ── Stats ── */
 .stats {
@@ -155,10 +167,10 @@
 
 .colHd {
   font-size: 15px;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.6em;
   text-transform: uppercase;
   color: var(--gray-400);
-  padding: 0.6rem 1.1rem;
+  padding: 0.8rem 1.1rem;
   border-bottom: 0.5px solid var(--gray-200);
   display: flex;
   align-items: center;
@@ -167,7 +179,6 @@
 }
 
 .hdCount { font-size: 15px; color: var(--gray-300); }
-
 .colBody { padding: 0.85rem 1.1rem; display: flex; flex-direction: column; }
 
 .scrollable {
@@ -195,21 +206,13 @@
   border-color: var(--black) !important;
 }
 
-/* ── Semester toggle ── */
-.semToggle { display:flex; align-items:center; gap:8px; padding:0 1rem; border-left:0.5px solid var(--gray-200); height:100%; }
-.semLabel  { font-size:16px; color:var(--gray-400); white-space:nowrap; }
-.semBtns   { display:flex; border:0.5px solid var(--gray-200); border-radius:99px; overflow:hidden; }
-.semBtn    { font-size:16px; padding:3px 10px; border:none; background:transparent; color:var(--gray-400); cursor:pointer; }
-.semBtn:hover { background:var(--gray-50); }
-.semActive { background:var(--black) !important; color:var(--white) !important; }
-
 /* Cart button in header */
 .cartBtn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 17px;
-  padding: 5px 14px;
+  gap: 8px;
+  font-size: 19px; /* 💡 Increased from 17px */
+  padding: 5px 16px;
   border: 0.5px solid var(--gray-300);
   border-radius: 6px;
   background: transparent;
@@ -228,70 +231,69 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--white);
   color: var(--black);
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* ── Modern Topbar View Toggle Radio Group ── */
+.viewToggleRadioGroup {
+  display: flex;
+  background: #2a2a2a;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid #3c3c3c;
+  height: 36px; /* 💡 Increased from 28px to match text scale */
+  align-items: center;
+}
+
+.radioLabelOption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  height: 100%;
+  font-size: 16px; /* 💡 Increased from 13px */
   font-weight: 600;
-}
-.cartBtnActive .cartBadge {
-  background: var(--white);
-  color: var(--black);
-}
-
-/* ── Mobile responsive ── */
-.hideOnMobile { display: block; }
-
-@media (max-width: 768px) {
-  .hideOnMobile { display: none; }
-
-  .topbar {
-    padding: 6px 10px;
-    gap: 6px;
-    flex-wrap: nowrap;
-  }
-  .brand { font-size: 11px; }
-  .studentName { font-size: 12px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .logoutBtn { font-size: 11px; padding: 4px 8px; }
-  .cartBtn { padding: 4px 10px; font-size: 13px; }
-
-  .stats {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0;
-  }
-  .stat { padding: 8px 12px; }
-  .statVal { font-size: 18px; }
-
-  .cols {
-    grid-template-columns: 1fr !important;
-    --col1-width: 1fr !important;
-  }
-  .col[style*="gridColumn"] {
-    grid-column: 1 !important;
-  }
-  .col:first-child {
-    max-height: 40vh;
-    overflow-y: auto;
-  }
+  color: #b3b3b3;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease-in-out;
+  user-select: none;
 }
 
-@media (max-width: 480px) {
-  .stats { grid-template-columns: repeat(2, 1fr); }
-  .statLabel { font-size: 9px; }
-  .statVal   { font-size: 16px; }
-  .statSub   { font-size: 10px; }
+.radioLabelOption:hover {
+  color: #ffffff;
+  background: #333333;
+}
+
+/* Hidden inputs that handle the state */
+.hiddenRadioInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Styled active active radio pill status */
+.radioOptionActive {
+  background: #ffffff !important;
+  color: #111111 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 /* ── Chains button in topbar ── */
 .chainsBtn {
-  font-size: 16px;
+  font-size: 18px; /* 💡 Increased from 16px */
   color: var(--gray-400);
   border: none;
   border-radius: 0;
   background: transparent;
-  padding: 0 1.1rem;
+  padding: 0 1.2rem;
   height: 100%;
   letter-spacing: 0.04em;
   cursor: pointer;
@@ -300,14 +302,64 @@
 }
 .chainsBtn:hover { color: var(--black); background: var(--gray-50); }
 
-/* Mobile tweaks */
+/* ── Academic Advisory Notice Banner Animations ── */
+.gpaAlertBanner {
+  margin: 16px 0;
+  border: 2px solid #cbd5e0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(229, 62, 62, 0.04);
+  animation: blinkGpa 1s linear 10;
+}
+
+.gpaAlertHeader {
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  background: transparent;
+  user-select: none;
+}
+
+.gpaAlertTitle {
+  font-weight: 700;
+  font-size: 15px;
+  color: #9b2c2c;
+}
+
+@keyframes blinkGpa {
+  0%, 49% {
+    background-color: #fee2e2;
+    border-color: #e53e3e;
+  }
+  50%, 100% {
+    background-color: #ffffff;
+    border-color: #cbd5e0;
+  }
+}
+
+/* ── Mobile responsive ── */
+.hideOnMobile { display: block; }
+
 @media (max-width: 768px) {
-  .cols {
-    grid-template-columns: 1fr !important;
-  }
-  .sideCol {
-    width: 100% !important;
-    max-height: 35vh;
-    overflow-y: auto;
-  }
+  .hideOnMobile { display: none; }
+  .topbar { padding: 6px 10px; gap: 6px; flex-wrap: nowrap; height: auto; min-height: 44px; }
+  .brand { font-size: 13px; }
+  .studentName { font-size: 13px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .logoutBtn { font-size: 13px; padding: 4px 8px; }
+  .cartBtn { padding: 4px 10px; font-size: 14px; }
+  .stats { grid-template-columns: repeat(2, 1fr); gap: 0; }
+  .stat { padding: 8px 12px; }
+  .statVal { font-size: 18px; }
+  .cols { grid-template-columns: 1fr !important; }
+  .sideCol { width: 100% !important; max-height: 35vh; overflow-y: auto; }
+}
+
+@media (max-width: 480px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .statLabel { font-size: 9px; }
+  .statVal   { font-size: 16px; }
+  .statSub   { font-size: 10px; }
 }

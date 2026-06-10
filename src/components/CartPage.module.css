@@ -1,112 +1,355 @@
 .page { display:flex; flex-direction:column; height:100%; overflow:hidden; background:#fff; }
 
-/* Top bar */
+/* Top bar styles */
 .topbar {
-  display:flex; align-items:center; gap:12px;
-  padding:8px 16px; border-bottom:1px solid #ddd;
+  display:flex; align-items:center; gap:16px;
+  padding:14px 20px; border-bottom:1px solid #ddd;
   flex-shrink:0; background:#f7f5f0; flex-wrap:wrap;
 }
 .backBtn {
-  font-size:17px; padding:5px 12px; border:0.5px solid #bbb;
+  font-size:20px; padding:6px 16px; border:0.5px solid #bbb;
   border-radius:5px; background:#fff; cursor:pointer; color:#555; white-space:nowrap;
+  font-weight: 600;
 }
 .backBtn:hover { background:#eee; }
-.title { font-size:17px; font-weight:500; color:#111; }
-.subtitle { font-size:17px; color:#999; }
+.title { font-size:22px; font-weight:700; color:#111; }
+.subtitle { font-size:19px; font-weight: 500; color:#666; }
+
 .conflictPill {
-  font-size:16px; padding:3px 10px; border-radius:99px;
+  font-size:18px; padding:6px 14px; border-radius:99px;
   background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; white-space:nowrap;
-}
-.submitBtn {
-  font-size:17px; padding:8px 20px; background:#111;
-  color:#fff; border:none; border-radius:5px; cursor:pointer; white-space:nowrap;
-}
-.submitBtn:hover:not(:disabled) { background:#333; }
-.submitBtn:disabled { opacity:0.5; cursor:default; }
-.submitBtnDisabled { background:#dc2626 !important; }
-
-/* Error banner */
-.errorBanner {
-  padding:10px 16px; background:#fee2e2; color:#7f1d1d;
-  font-size:15px; border-bottom:1px solid #fca5a5; flex-shrink:0;
+  font-weight: 600;
 }
 
-/* Body */
-.body { display:grid; grid-template-columns:280px 1fr; flex:1; min-height:0; overflow:hidden; }
-
-/* Left list */
-.listCol { border-right:1px solid #ddd; overflow-y:auto; }
-.empty { padding:20px 16px; font-size:17px; color:#999; font-style:italic; line-height:1.8; }
-
-.item { display:flex; border-bottom:0.5px solid #eee; }
-.item:hover { background:#fafaf8; }
-.itemConflict { background:#fff8f8 !important; }
-.colorBar { width:4px; flex-shrink:0; }
-.itemBody { padding:10px 12px; flex:1; min-width:0; }
-.itemTop { display:flex; align-items:center; gap:6px; margin-bottom:2px; flex-wrap:wrap; }
-.itemCode { font-size:16px; font-family:monospace; color:#777; }
-.itemCr   { font-size:16px; color:#aaa; }
-.conflictTag { font-size:15px; color:#b91c1c; background:#fee2e2; padding:1px 6px; border-radius:99px; }
-.removeBtn {
-  margin-left:auto; font-size:16px; padding:2px 8px;
-  border:0.5px solid #ccc; border-radius:4px;
-  background:transparent; cursor:pointer; color:#777;
+.topbarActionWrap {
+  margin-left: auto; 
+  display: flex; 
+  gap: 10px; 
+  align-items: center;
 }
-.removeBtn:hover { border-color:#c00; color:#c00; }
-.itemName { font-size:15px; font-style:italic; color:#111; margin-bottom:3px; }
-.itemSec  { display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:16px; color:#777; }
-.secBadge { font-size:15px; padding:1px 5px; border-radius:3px; background:#eee; color:#555; font-family:monospace; }
-.itemInst { font-size:16px; color:#999; font-style:italic; margin-top:2px; }
+.submitErrorLabel {
+  font-size: 13px; 
+  color: #dc2626;
+}
+.submitScheduleBtn {
+  padding: 8px 20px; 
+  border-radius: 8px; 
+  border: none; 
+  cursor: pointer; 
+  font-weight: 600; 
+  font-size: 13px; 
+  color: #fff;
+  background: #1a6a2a;
+}
+.btnDisabled {
+  background: #ccc !important;
+  cursor: not-allowed !important;
+}
+.submittedStatusText {
+  font-size: 13px; 
+  color: #1a6a2a; 
+  font-weight: 600;
+}
+.withdrawBtn {
+  padding: 8px 20px; 
+  border-radius: 8px; 
+  border: none; 
+  font-weight: 600; 
+  font-size: 13px;
+}
+.withdrawActive {
+  background: #7f1d1d;
+  color: #fff;
+  cursor: pointer;
+}
+.withdrawDisabled {
+  background: #e5e5e5;
+  color: #aaa;
+  cursor: not-allowed;
+}
 
-/* Right grid */
-.gridCol { display:flex; flex-direction:column; overflow:hidden; }
-.gridTitle { font-size:16px; letter-spacing:0.12em; text-transform:uppercase; color:#aaa; padding:10px 14px 6px; flex-shrink:0; }
-.gridEmpty { padding:12px 14px; font-size:17px; color:#999; font-style:italic; }
-.gridWrap { flex:1; overflow:auto; padding:0 12px 12px; }
+/* Base Workspace Splits styles */
+.workspaceContainer {
+  display: flex; 
+  flex: 1; 
+  min-height: 0; 
+  overflow: hidden; 
+  background: #fcfcfb;
+}
+.emptyCartMessage {
+  width: 100%; 
+  text-align: center; 
+  padding-top: 100px;
+  font-size: 19px; 
+  color: #999; 
+  font-style: italic; 
+  line-height: 1.8;
+}
 
-/* Grid */
-.grid { display:flex; min-height:560px; width:100%; }
+/* Sidebar structure layout - Locked at 30% horizontal space */
+.sidebarLayoutColumn {
+  flex: 0 0 30%; 
+  display: flex; 
+  flex-direction: column; 
+  border-right: 1px solid #e2e8f0; 
+  background: #fff; 
+  padding: 20px; 
+  box-sizing: border-box; 
+  overflow-y: auto;
+}
+.tabsHeaderWrapper {
+  display: flex; 
+  gap: 4px; 
+  border-bottom: 1px solid #ddd; 
+  margin-bottom: 16px; 
+  width: 100%;
+}
+.tabSelectorButton {
+  padding: 8px 24px; 
+  font-size: 18px; 
+  font-weight: 600;
+  border: none; 
+  cursor: pointer; 
+  border-radius: 8px 8px 0 0;
+  transition: background 0.15s, color 0.15s;
+}
+.tabStateActive {
+  background: #fff !important; 
+  color: #1a3a6a !important; 
+  border-bottom: 2px solid #fff !important; 
+  box-shadow: 0 -2px 6px rgba(0,0,0,0.04);
+}
+.tabStateInactive {
+  background: #e8edf4 !important; 
+  color: #666 !important; 
+  border-bottom: 2px solid transparent !important;
+}
 
-.gutter { width:36px; flex-shrink:0; display:flex; flex-direction:column; }
-.gutterTop { height:26px; flex-shrink:0; }
+.staticFallbackHeaderRow {
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  margin-bottom: 16px;
+}
+.fallbackIndicatorBadge {
+  width: 4px; 
+  height: 18px; 
+  border-radius: 2px;
+}
+.badgeFallColor { background: #2a6aaa; }
+.badgeSummerColor { background: #aa7a2a; }
+.staticHeaderLabelText {
+  font-weight: 700; 
+  font-size: 15px; 
+  color: #333;
+}
+
+.cardsStackContainer {
+  display: flex; 
+  flex-direction: column; 
+  gap: 12px;
+}
+
+/* Item cards left-side detail layout items */
+.itemCardWrapper {
+  display: flex; 
+  width: 100%; 
+  border: 1px solid #e2e8f0; 
+  border-radius: 6px; 
+  overflow: hidden; 
+  background: #fff; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+.itemConflictBorder {
+  background: #fff8f8 !important;
+  border-color: #fca5a5 !important;
+}
+.cardColorGutterBar {
+  width: 5px; 
+  flex-shrink: 0;
+}
+.cardContentBodyContainer {
+  padding: 12px; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 4px; 
+  min-width: 0;
+  flex: 1;
+}
+.cardTopFlexRow {
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  width: 100%;
+}
+.cardHeadingMetaGroup {
+  display: flex; 
+  align-items: center; 
+  gap: 8px;
+}
+.cardCourseCodeText {
+  font-size: 25px; 
+  font-family: monospace; 
+  font-weight: 700; 
+  color: #1a3a6a;
+}
+.cardCreditsPillBadge {
+  font-size: 11px; 
+  background: #f7fafc; 
+  border: 1px solid #e2e8f0; 
+  padding: 1px 5px; 
+  border-radius: 4px; 
+  color: #4a5568;
+}
+.cardConflictPillBadge {
+  color: #dc2626; 
+  font-size: 11px; 
+  font-weight: 700; 
+  background: #fee2e2; 
+  padding: 1px 6px; 
+  border-radius: 4px;
+}
+.cardRemoveActionBtn {
+  color: #e53e3e; 
+  background: none; 
+  border: 1px solid #fed7d7; 
+  padding: 4px 12px; 
+  border-radius: 4px; 
+  cursor: pointer; 
+  font-size: 11px; 
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+.cardRemoveActionBtn:hover {
+  background: #fff5f5;
+  border-color: #dc2626;
+}
+.cardCourseTitleLabel {
+  font-size: 18px; 
+  font-weight: 600; 
+  font-style: italic; 
+  color: #111; 
+  margin-bottom: 6px; 
+  line-height: 1.4;
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis;
+}
+.cardSectionDetailsMetadataBox {
+  font-size: 16px; 
+  color: #555; 
+  line-height: 1.4;
+  display: flex; 
+  flex-direction: column; 
+  gap: 2px;
+}
+.cardSectionIdPill {
+  background: #ebf8ff; 
+  color: #2b6cb0; 
+  padding: 1px 4px; 
+  border-radius: 3px; 
+  font-size: 10px; 
+  font-weight: 700; 
+  margin-right: 6px;
+}
+.cardMeetingScheduleDateTimeString {
+  font-size: 11px; 
+  color: #4a5568;
+}
+.cardLocationCampusRoomString {
+  font-size: 11px; 
+  color: #718096;
+}
+.cardInstructorFieldText {
+  font-size: 16px; 
+  color: #666; 
+  font-style: italic; 
+  margin-top: 4px;
+  border-top: 1px solid #edf2f7; 
+  padding-top: 2px;
+}
+
+/* Right Side column panel container dimensions - Stretched to 70% width layout */
+.calendarLayoutColumn {
+  flex: 0 0 70%; 
+  display: flex; 
+  flex-direction: column; 
+  padding: 20px; 
+  box-sizing: border-box; 
+  overflow: hidden;
+}
+.calendarPreviewTitleLabel {
+  margin-bottom: 10px; 
+  font-weight: 700; 
+  font-size: 12px; 
+  color: #718096; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px;
+}
+.calendarScrollCanvasContainer {
+  flex: 1; 
+  overflow-y: auto; 
+  border: 1px solid #e2e8f0; 
+  border-radius: 8px; 
+  background: #fff; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+/* Timeline Layout Grid components */
+.grid { 
+  display: flex; 
+  min-height: 900px; 
+  width: 100%; 
+  background: #fff;
+  border: 1px solid #eef0eb;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+/* Time Gutter styling cells tracking columns */
+.gutter { width:54px; flex-shrink:0; display:flex; flex-direction:column; background: #fbfbfa; border-right: 1px solid #eef0eb; }
+.gutterTop { height:36px; flex-shrink:0; border-bottom: 1px solid #ddd; }
+
 .gutterCell {
-  flex:1; min-height:0;
-  display:flex; align-items:flex-start; justify-content:flex-end;
-  padding:2px 5px 0 0; font-size:15px; color:#ccc;
-  border-top:0.5px solid #eee; white-space:nowrap;
+  height: calc(900px / 13); 
+  display:flex;
+  align-items: center; 
+  justify-content: flex-end;
+  box-sizing: border-box;
+}
+.timeText {
+  font-size:14px; color:#888; font-weight: 600;
+  padding-right: 8px;
 }
 
-.dayCol { flex:1; display:flex; flex-direction:column; border-left:0.5px solid #eee; min-width:0; }
+/* Day Column layouts */
+.dayCol { flex:1; display:flex; flex-direction:column; border-left:1px solid #eef0eb; min-width:0; }
 .dayHd {
-  height:26px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
-  font-size:15px; letter-spacing:0.1em; color:#aaa;
-  border-bottom:0.5px solid #ddd; background:#f7f5f0;
+  height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  font-size:16px; letter-spacing:0.1em; color:#555; font-weight: 700;
+  border-bottom:1px solid #ddd; background:#f7f5f0;
+  box-sizing: border-box;
 }
-.dayBody {
-  flex:1; position:relative; overflow:hidden;
-}
+.dayBody { flex:1; position:relative; overflow:hidden; }
 
-.hourLine {
-  position:absolute; left:0; right:0;
-  border-top:0.5px solid #eee; pointer-events:none; z-index:0;
-}
-.halfLine {
-  position:absolute; left:0; right:0;
-  border-top:0.5px dashed #f0ede4; pointer-events:none; z-index:0;
-}
+.hourRow { position: relative; width: 100%; box-sizing: border-box; }
+.hourLine { position: absolute; top: 0; left: 0; right: 0; border-top:1px solid #eee; pointer-events:none; }
+.halfLine { position:absolute; top: 50%; left:0; right:0; border-top:1.5px dashed #f6f4ee; pointer-events:none; }
 
-/* Course block */
+/* Visual Course Render calendar cards blocks styles */
 .block {
-  position:absolute; left:3px; right:3px;
-  border:1px solid; border-radius:4px;
-  padding:3px 5px; overflow:hidden;
+  position:absolute; left:4px; right:4px;
+  border:1px solid; border-radius:5px;
+  padding:10px 12px; 
+  overflow:hidden;
   box-sizing:border-box; z-index:2;
-  transition:box-shadow 0.1s;
+  transition: box-shadow 0.15s ease;
 }
-.blockConflict {
-  border-width:2px !important;
-  box-shadow:0 0 0 1px #fca5a5;
-}
-.bCode { font-size:15px; opacity:0.65; letter-spacing:0.03em; white-space:nowrap; }
-.bName { font-size:15px; font-weight:500; line-height:1.2; margin-top:1px; overflow:hidden; }
-.bConflictLabel { font-size:15px; margin-top:2px; opacity:0.8; }
+.block:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+.blockConflict { border-width:2px !important; box-shadow:0 0 0 1px #fca5a5; }
+
+.bCode { font-size:15px; font-weight: 700; opacity:0.9; letter-spacing:0.04em; white-space:nowrap; }
+.bName { font-size:15px; font-weight:700; line-height:1.3; margin-top:3px; overflow:hidden; text-overflow: ellipsis; }
+.bInst { font-size:13px; font-style: italic; opacity: 0.9; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } 
+.bConflictLabel { font-size:14px; font-weight: 700; margin-top:6px; opacity:0.9; text-transform: uppercase; }
