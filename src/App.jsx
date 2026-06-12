@@ -21,7 +21,6 @@ export default function App() {
   const [showChains,       setShowChains]       = useState(false)
   const [showCartPage,     setShowCartPage]     = useState(false)
   const [campus,           setCampus]           = useState('')
-  const [showBlocked,      setShowBlocked]      = useState(true)
   const [gpaPanelOpen,     setGpaPanelOpen]     = useState(false)
   const [submittedDbCodes, setSubmittedDbCodes] = useState(new Set())
 
@@ -194,9 +193,6 @@ export default function App() {
           recommendations, chainDisplay, coReqEdges, prereqMap, All_courses } = result
 
   const blockedArray = [...(blockedSet || [])]
-  const cascadeNames = blockedArray
-    .map(code => recommendations.find(r => r.code === code)?.name ?? code)
-    .slice(0, 5)
 
   const repeatableGpaTargets = (completed || []).filter(course => {
     if (!course.grade) return false
@@ -304,11 +300,11 @@ export default function App() {
       </div>
 
       {/* ── Low CGPA banner ─────────────────────────────────── */}
-      {student.cgpa < 2.5 && (
+      {student.cgpa < 2 && (
         <div className={s.gpaAlertBanner}>
           <div onClick={() => setGpaPanelOpen(prev => !prev)} className={s.gpaAlertHeader}>
             <span className={s.gpaAlertTitle}>
-              Academic Advisory Notice: CGPA is below 2.5 ({student.cgpa?.toFixed(2)})
+              Academic Advisory Notice: CGPA is below 2 ({student.cgpa?.toFixed(2)})
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#c53030', background: '#f7fafc',
@@ -324,7 +320,7 @@ export default function App() {
           {gpaPanelOpen && (
             <div style={{ padding: 20, background: '#fff', borderTop: '1px solid #edf2f7' }}>
               <p style={{ margin: '0 0 16px', fontSize: 14, color: '#4a5568', lineHeight: 1.5 }}>
-                Your GPA is currently under <strong>2.50</strong>. It is highly recommended to repeat
+                Your GPA is currently under <strong>2</strong>. It is highly recommended to repeat
                 courses where you earned a <strong>C+ grade or lower</strong>. Repeating these classes
                 allows you to override older grades, quickly boosting your overall CGPA.
               </p>
@@ -363,19 +359,6 @@ export default function App() {
             </div>
           )}
         </div>
-      )}
-
-      {/* ── Blocked toggle ───────────────────────────────────── */}
-      <button
-        onClick={() => setShowBlocked(prev => !prev)}
-        style={{ color: 'black', fontWeight: 'bold', fontSize: 16, padding: '10px 16px',
-          margin: '16px 0', border: 'none', borderRadius: 8, cursor: 'pointer' }}
-      >
-        {showBlocked ? 'Hide Blocked' : 'Show Blocked'}
-      </button>
-
-      {showBlocked && cascadeNames.length > 0 && (
-        <div className={s.cascadeWarn}>BLOCKED: {cascadeNames.join(', ')}</div>
       )}
 
       {/* ── Main columns ─────────────────────────────────────── */}
