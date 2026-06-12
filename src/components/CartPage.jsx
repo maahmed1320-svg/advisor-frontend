@@ -127,7 +127,6 @@ function ScheduleGrid({ blocks, conflicts }) {
   )
 }
 
-// Destructured the database synchronization props passed from App.jsx
 export default function CartPage({ 
   cartItems = [], 
   onRemove, 
@@ -156,7 +155,7 @@ export default function CartPage({
   const allConflicts = useMemo(() => new Set([...falConflicts, ...sumConflicts]), [falConflicts, sumConflicts])
 
   const hasConflicts = allConflicts.size > 0
-  const totalCr      = cartItems.reduce((acc, c) => acc + (c.credits ?? 0), 0)
+  const totalCr       = cartItems.reduce((acc, c) => acc + (c.credits ?? 0), 0)
 
   const activeItems     = resolvedTab === 'FAL' ? falItems     : sumItems
   const activeBlocks    = resolvedTab === 'FAL' ? falBlocks    : sumBlocks
@@ -165,12 +164,20 @@ export default function CartPage({
   const activeTotalCr   = activeItems.reduce((acc, c) => acc + (c.credits ?? 0), 0)
   const maxCredits      = resolvedTab === 'SUM' ? 7 : 20
 
-  // Calculated submission status dynamically based on the current active tab's contents
+  // 💡 FIXED: Track submittedDbCodes.size to handle mutated Set instances from App.jsx parent context
   const isCurrentTabSubmitted = useMemo(() => {
-    return activeItems.length > 0 && activeItems.every(item => submittedDbCodes.has(item.code))
-  }, [activeItems, submittedDbCodes])
+    if (!activeItems || activeItems.length === 0) return false;
+    return activeItems.every(item => {
+      if (submittedDbCodes instanceof Set) {
+        return submittedDbCodes.has(item.code);
+      }
+      if (Array.isArray(submittedDbCodes)) {
+        return submittedDbCodes.includes(item.code);
+      }
+      return false;
+    });
+  }, [activeItems, submittedDbCodes, submittedDbCodes?.size])
 
-  // Conflict state localized to the current viewable tab context
   const activeTabHasConflicts = activeConflicts.size > 0
 
   async function handleSubmit() {
@@ -179,7 +186,6 @@ export default function CartPage({
       const res = await fetch(`${BASE}/api/student/${studentId}/enroll`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // SCOPED ACTION: Only submit courses belonging to the active semester tab
         body: JSON.stringify({
           courses: activeItems.map(item => ({
             code: item.code, name: item.name, credits: item.credits,
@@ -199,7 +205,6 @@ export default function CartPage({
         throw new Error(errorMsg);
       }
       
-      // Sync state back to App.jsx global state tree context
       if (onRefreshSubmissions) {
         await onRefreshSubmissions(studentId)
       }
@@ -213,7 +218,6 @@ export default function CartPage({
       const res = await fetch(`${BASE}/api/student/${studentId}/enroll`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        // SCOPED ACTION: Only pass course codes belonging to the active tab
         body: JSON.stringify({ codes: activeItems.map(i => i.code) }),
       })
       
@@ -225,7 +229,6 @@ export default function CartPage({
         throw new Error(errorMsg);
       }
       
-      // Clear out only the current active tab items locally from tracking array map
       activeItems.forEach(item => onRemove(item.code))
 
       if (onRefreshSubmissions) {
@@ -247,7 +250,7 @@ export default function CartPage({
   return (
     <div className={s.page}>
 
-      {/* ── Top Bar ─────────────────────────────────────────── */}
+      {/* ── Top Bar ── */}
       <div className={s.topbar}>
         <button className={s.backBtn} onClick={onBack}>← Back</button>
         <span className={s.title}>My Saved Schedule Cart</span>
@@ -263,16 +266,19 @@ export default function CartPage({
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
           {submitError && <span style={{ fontSize: 13, color: '#dc2626' }}>{submitError}</span>}
 
+          {/* 💡 FIXED: Unified Button Framework Transition Layout to handle switching seamlessly */}
           {!isCurrentTabSubmitted ? (
             <button onClick={handleSubmit}
               disabled={submitLoading || activeItems.length === 0 || activeTabHasConflicts}
-              style={{ padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, color: '#fff',
+              style={{ padding: '8px 20px', borderRadius: 8, border: 'none', cursor: (activeItems.length === 0 || activeTabHasConflicts) ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, color: '#fff',
                 background: (activeItems.length === 0 || activeTabHasConflicts) ? '#ccc' : '#1a6a2a',
                 opacity: submitLoading ? 0.7 : 1 }}>
               {submitLoading ? 'Submitting…' : '✓ Done — Submit Schedule'}
             </button>
           ) : (
-            <span style={{ fontSize: 13, color: '#1a6a2a', fontWeight: 600 }}>✓ Submitted</span>
+            <button disabled style={{ padding: '8px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: 13, color: '#fff', background: '#1a6a2a', opacity: 0.6, cursor: 'not-allowed' }}>
+              ✓ Submitted
+            </button>
           )}
 
           <button onClick={handleWithdraw} disabled={!isCurrentTabSubmitted || withdrawLoading}
@@ -286,7 +292,7 @@ export default function CartPage({
         </div>
       </div>
 
-      {/* ── Base Workspace Box ──────────────────────────────── */}
+      {/* ── Base Workspace Box ── */}
       <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden', background: '#fcfcfb' }}>
         
         {cartItems.length === 0 ? (
@@ -295,7 +301,7 @@ export default function CartPage({
           </div>
         ) : (
           <>
-            {/* 💡 LEFT SIDE COLUMN PANEL: Covers exactly 2/5 of view */}
+            {/* LEFT SIDE COLUMN PANEL */}
             <div style={{ flex: '0 0 30%', display: 'flex', flexDirection: 'column', borderRight: '1px solid #e2e8f0', background: '#fff', padding: '20px', boxSizing: 'border-box', overflowY: 'auto' }}>
               
               {/* Dynamic Tabs Block */}
@@ -345,7 +351,6 @@ export default function CartPage({
                             <span style={{ fontSize: '11px', background: '#f7fafc', border: '1px solid #e2e8f0', padding: '1px 5px', borderRadius: '4px', color: '#4a5568' }}>{item.credits} cr</span>
                             {isConflict && <span style={{ color: '#dc2626', fontSize: '11px', fontWeight: '700', background: '#fee2e2', padding: '1px 6px', borderRadius: '4px' }}>⚠ conflict</span>}
                           </div>
-                          {/* Checked against the specific item code state to lock down single card clear triggers */}
                           {!submittedDbCodes.has(item.code) && (
                             <button className={s.removeBtn} onClick={() => onRemove(item.code)} style={{ color: '#e53e3e', background: 'none', border: '1px solid #fed7d7', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>Remove</button>
                           )}
@@ -373,13 +378,12 @@ export default function CartPage({
               </div>
             </div>
 
-            {/* 💡 RIGHT SIDE COLUMN PANEL: Covers exactly 3/5 of view */}
+            {/* RIGHT SIDE COLUMN PANEL */}
             <div style={{ flex: '0 0 70%', display: 'flex', flexDirection: 'column', padding: '20px', boxSizing: 'border-box', overflow: 'hidden' }}>
               <div style={{ marginBottom: '10px', fontWeight: '700', fontSize: '12px', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 {resolvedTab === 'FAL' ? '🍂 Fall Session' : '☀️ Summer Session'} — Weekly Calendar Preview
               </div>
               
-              {/* Dynamic Scrollable Grid Wrapper Canvas */}
               <div style={{ flex: 1, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                 <ScheduleGrid blocks={activeBlocks} conflicts={activeConflicts} />
               </div>
