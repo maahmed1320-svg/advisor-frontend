@@ -104,7 +104,8 @@ export default function CourseBrowser({
   }, [recommendations, All_courses, filter, search, termFilter, campusFilter, blockedSet])
 
   function handleAdd(r) {
-    if (submittedDbCodes.has(r.code)) return
+    // Fail-safe protection layer mapping checks
+    if (submittedDbCodes?.has?.(r.code)) return
     const groups = r.displayGroups || []
     const chosenClassNbr = selected[r.code]
     const group = groups.find(g => g.class_nbr === chosenClassNbr) || groups[0]
@@ -194,9 +195,10 @@ export default function CourseBrowser({
       {/* ── Course list ──────────────────────────────────────── */}
       <div className={s.body}>
         {visibleCourses.map(r => {
-          const inCart            = (cart || []).some(c => c.code === r.code)
+          const inCart             = (cart || []).some(c => c.code === r.code)
           const blocked           = blockedSet.includes(r.code)
-          const isAlreadySubmitted = submittedDbCodes.has(r.code)
+          // 💡 SAFE CHECK: Added defensive check to prevent crashing if set instance isn't ready
+          const isAlreadySubmitted = submittedDbCodes?.has?.(r.code) ?? false
           const isOpen            = expanded[r.code] || false
           const displayGroups     = r.displayGroups || []
           const currentSelection  = selected[r.code]
@@ -214,9 +216,9 @@ export default function CourseBrowser({
                 ${!hasPrereqsMet && !blocked ? s.cardLocked : ''}
               `}
               style={isAlreadySubmitted ? {
-                borderLeft: '3px solid #2b6cb0',
-                background: '#f0f7ff',
-                opacity: 0.9,
+                borderLeft: '3px solid #6b46c1',
+                background: '#faf5ff',
+                opacity: 0.95,
               } : {}}
             >
 
@@ -244,13 +246,15 @@ export default function CourseBrowser({
                   {blocked && (
                     <span className={`${s.badge} ${s.badgeBlocked}`}>blocked</span>
                   )}
+                  
+                  {/* 💡 STATE NOTIFIER: Explicit purple indicator text box badge */}
                   {isAlreadySubmitted && (
                     <span style={{
-                      fontSize: 11, fontWeight: 700, color: '#2b6cb0',
-                      background: '#ebf8ff', border: '1px solid #bee3f8',
+                      fontSize: 11, fontWeight: 700, color: '#6b46c1',
+                      background: '#f3e8ff', border: '1px solid #e9d5ff',
                       padding: '2px 8px', borderRadius: 4, marginRight: 6,
                     }}>
-                      🔒 Enrolled
+                      🔒 Already Enrolled
                     </span>
                   )}
 
@@ -264,9 +268,9 @@ export default function CourseBrowser({
                         ${((!hasPrereqsMet || isLimitExceeded) && !inCart && !isAlreadySubmitted) ? s.addBtnDisabled : ''}
                       `}
                       style={isAlreadySubmitted ? {
-                        background:    '#ebf8ff',
-                        color:         '#2b6cb0',
-                        borderColor:   '#bee3f8',
+                        background:    '#f3e8ff',
+                        color:         '#6b46c1',
+                        borderColor:   '#e9d5ff',
                         cursor:        'not-allowed',
                         pointerEvents: 'none',
                       } : {}}
@@ -278,7 +282,7 @@ export default function CourseBrowser({
                         handleAdd(r)
                       }}
                     >
-                      {isAlreadySubmitted ? '✓ Submitted'
+                      {isAlreadySubmitted ? '✓ Enrolled'
                         : inCart          ? '✓ Added'
                         : !hasPrereqsMet  ? '🔒 Locked'
                         : isLimitExceeded ? '⚠️ Max Credits'
@@ -312,10 +316,10 @@ export default function CourseBrowser({
                         key={`${r.code}-${group.class_nbr}`}
                         className={`${s.secBlock} ${isSelected ? s.secSelected : ''}`}
                         style={{
-                          border:       isSelected ? '2px solid #1a3a6a' : '1px solid #e2e8f0',
+                          border:       isSelected ? (isAlreadySubmitted ? '2px solid #6b46c1' : '2px solid #1a3a6a') : '1px solid #e2e8f0',
                           borderRadius: 6,
                           background:   isAlreadySubmitted
-                            ? (isSelected ? '#dbeafe' : '#eff6ff')
+                            ? (isSelected ? '#e9d5ff' : '#f3e8ff')
                             : (isSelected ? '#f7fafc'  : '#fff'),
                           cursor:        isAlreadySubmitted ? 'not-allowed' : 'pointer',
                           opacity:       isAlreadySubmitted ? 0.75 : 1,
@@ -328,7 +332,8 @@ export default function CourseBrowser({
                         }}
                       >
                         {group.subSections.map((subSec, sIdx) => (
-                          <div key={sIdx} className={s.secRow}
+                          // 💡 SAFE TRACKING KEYS: Replaced array map indexes with robust key structures to satisfy compiler engine
+                          <div key={`${group.class_nbr}-${sIdx}`} className={s.secRow}
                             style={{
                               borderBottom: sIdx < group.subSections.length - 1 ? '1px dashed #edf2f7' : 'none',
                               padding: '6px 0',

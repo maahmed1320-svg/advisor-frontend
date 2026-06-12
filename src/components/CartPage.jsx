@@ -127,8 +127,15 @@ function ScheduleGrid({ blocks, conflicts }) {
   )
 }
 
-export default function CartPage({ cartItems = [], onRemove, onBack, studentId }) {
-  const [submitted,       setSubmitted]       = useState(false)
+// Destructured the database synchronization props passed from App.jsx
+export default function CartPage({ 
+  cartItems = [], 
+  onRemove, 
+  onBack, 
+  studentId, 
+  submittedDbCodes = new Set(), 
+  onRefreshSubmissions 
+}) {
   const [submitLoading,   setSubmitLoading]   = useState(false)
   const [submitError,     setSubmitError]     = useState(null)
   const [withdrawLoading, setWithdrawLoading] = useState(false)
@@ -155,14 +162,26 @@ export default function CartPage({ cartItems = [], onRemove, onBack, studentId }
   const activeBlocks    = resolvedTab === 'FAL' ? falBlocks    : sumBlocks
   const activeConflicts = resolvedTab === 'FAL' ? falConflicts : sumConflicts
 
+  const activeTotalCr   = activeItems.reduce((acc, c) => acc + (c.credits ?? 0), 0)
+  const maxCredits      = resolvedTab === 'SUM' ? 7 : 20
+
+  // Calculated submission status dynamically based on the current active tab's contents
+  const isCurrentTabSubmitted = useMemo(() => {
+    return activeItems.length > 0 && activeItems.every(item => submittedDbCodes.has(item.code))
+  }, [activeItems, submittedDbCodes])
+
+  // Conflict state localized to the current viewable tab context
+  const activeTabHasConflicts = activeConflicts.size > 0
+
   async function handleSubmit() {
     setSubmitLoading(true); setSubmitError(null)
     try {
       const res = await fetch(`${BASE}/api/student/${studentId}/enroll`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // SCOPED ACTION: Only submit courses belonging to the active semester tab
         body: JSON.stringify({
-          courses: cartItems.map(item => ({
+          courses: activeItems.map(item => ({
             code: item.code, name: item.name, credits: item.credits,
             class_nbr: item.section?.class_nbr, section: item.section?.section,
             session: item.section?.session, campus: item.section?.campus,
@@ -172,7 +191,6 @@ export default function CartPage({ cartItems = [], onRemove, onBack, studentId }
         }),
       })
       
-      // SAFE CHECK: Ensure it's actually JSON before parsing
       const contentType = res.headers.get("content-type");
       if (!res.ok) {
         const errorMsg = (contentType && contentType.includes("application/json")) 
@@ -180,7 +198,11 @@ export default function CartPage({ cartItems = [], onRemove, onBack, studentId }
           : "Submission failed: Server returned an error";
         throw new Error(errorMsg);
       }
-      setSubmitted(true)
+      
+      // Sync state back to App.jsx global state tree context
+      if (onRefreshSubmissions) {
+        await onRefreshSubmissions(studentId)
+      }
     } catch (e) { setSubmitError(e.message) }
     finally { setSubmitLoading(false) }
   }
@@ -191,7 +213,8 @@ export default function CartPage({ cartItems = [], onRemove, onBack, studentId }
       const res = await fetch(`${BASE}/api/student/${studentId}/enroll`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ codes: cartItems.map(i => i.code) }),
+        // SCOPED ACTION: Only pass course codes belonging to the active tab
+        body: JSON.stringify({ codes: activeItems.map(i => i.code) }),
       })
       
       const contentType = res.headers.get("content-type");
@@ -202,8 +225,12 @@ export default function CartPage({ cartItems = [], onRemove, onBack, studentId }
         throw new Error(errorMsg);
       }
       
-      cartItems.forEach(item => onRemove(item.code))
-      setSubmitted(false)
+      // Clear out only the current active tab items locally from tracking array map
+      activeItems.forEach(item => onRemove(item.code))
+
+      if (onRefreshSubmissions) {
+        await onRefreshSubmissions(studentId)
+      }
       setActiveTab(null)
     } catch (e) { setSubmitError(e.message) }
     finally { setWithdrawLoading(false) }
@@ -225,18 +252,22 @@ export default function CartPage({ cartItems = [], onRemove, onBack, studentId }
         <button className={s.backBtn} onClick={onBack}>← Back</button>
         <span className={s.title}>My Saved Schedule Cart</span>
         <span className={s.subtitle}>
-          {cartItems.length} course{cartItems.length !== 1 ? 's' : ''} · {totalCr} / 20 max credits
+          {resolvedTab ? (
+            `${activeItems.length} course${activeItems.length !== 1 ? 's' : ''} · ${activeTotalCr} / ${maxCredits} max credits`
+          ) : (
+            `0 courses · 0 / 20 max credits`
+          )}
         </span>
         {hasConflicts && <span className={s.conflictPill}>⚠ Time conflict detected</span>}
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
           {submitError && <span style={{ fontSize: 13, color: '#dc2626' }}>{submitError}</span>}
 
-          {!submitted ? (
+          {!isCurrentTabSubmitted ? (
             <button onClick={handleSubmit}
-              disabled={submitLoading || cartItems.length === 0 || hasConflicts}
+              disabled={submitLoading || activeItems.length === 0 || activeTabHasConflicts}
               style={{ padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, color: '#fff',
-                background: (cartItems.length === 0 || hasConflicts) ? '#ccc' : '#1a6a2a',
+                background: (activeItems.length === 0 || activeTabHasConflicts) ? '#ccc' : '#1a6a2a',
                 opacity: submitLoading ? 0.7 : 1 }}>
               {submitLoading ? 'Submitting…' : '✓ Done — Submit Schedule'}
             </button>
@@ -244,11 +275,11 @@ export default function CartPage({ cartItems = [], onRemove, onBack, studentId }
             <span style={{ fontSize: 13, color: '#1a6a2a', fontWeight: 600 }}>✓ Submitted</span>
           )}
 
-          <button onClick={handleWithdraw} disabled={!submitted || withdrawLoading}
+          <button onClick={handleWithdraw} disabled={!isCurrentTabSubmitted || withdrawLoading}
             style={{ padding: '8px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: 13,
-              cursor: submitted ? 'pointer' : 'not-allowed',
-              background: submitted ? '#7f1d1d' : '#e5e5e5',
-              color: submitted ? '#fff' : '#aaa',
+              cursor: isCurrentTabSubmitted ? 'pointer' : 'not-allowed',
+              background: isCurrentTabSubmitted ? '#7f1d1d' : '#e5e5e5',
+              color: isCurrentTabSubmitted ? '#fff' : '#aaa',
               opacity: withdrawLoading ? 0.7 : 1 }}>
             {withdrawLoading ? 'Withdrawing…' : '✕ Withdraw & Clear'}
           </button>
@@ -259,7 +290,7 @@ export default function CartPage({ cartItems = [], onRemove, onBack, studentId }
       <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden', background: '#fcfcfb' }}>
         
         {cartItems.length === 0 ? (
-          <div className={s.empty} style={{ width: '100%', textAling: 'center', paddingTop: '100px' }}>
+          <div className={s.empty} style={{ width: '100%', textAlign: 'center', paddingTop: '100px' }}>
             Your advising cart is currently empty.<br />Return to look over your major requirements checklist.
           </div>
         ) : (
@@ -314,7 +345,8 @@ export default function CartPage({ cartItems = [], onRemove, onBack, studentId }
                             <span style={{ fontSize: '11px', background: '#f7fafc', border: '1px solid #e2e8f0', padding: '1px 5px', borderRadius: '4px', color: '#4a5568' }}>{item.credits} cr</span>
                             {isConflict && <span style={{ color: '#dc2626', fontSize: '11px', fontWeight: '700', background: '#fee2e2', padding: '1px 6px', borderRadius: '4px' }}>⚠ conflict</span>}
                           </div>
-                          {!submitted && (
+                          {/* Checked against the specific item code state to lock down single card clear triggers */}
+                          {!submittedDbCodes.has(item.code) && (
                             <button className={s.removeBtn} onClick={() => onRemove(item.code)} style={{ color: '#e53e3e', background: 'none', border: '1px solid #fed7d7', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>Remove</button>
                           )}
                         </div>

@@ -11,6 +11,11 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
   const pillRefs     = useRef({})
   const containerRef = useRef(null)
 
+  // ── New State for Search, Filter, and Sort Control ───────
+  const [completedSearch, setCompletedSearch] = useState("")
+  const [completedSortKey, setCompletedSortKey] = useState("date") // date, code, name, credits, grade
+  const [isInverted, setIsInverted] = useState(false)
+
   // ── Arrow drawing ─────────────────────────────────────────
   useEffect(() => {
     if (!hoveredCode) { setArrows([]); return }
@@ -80,7 +85,7 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
   const LEGEND = [
     { state: 'completed',   label: 'Completed',   extra: 'Course passed' },
     { state: 'in_progress', label: 'In Progress', extra: 'Currently enrolled' },
-    { state: 'locked',      label: 'Locked',      extra: 'Prerequisites not met' },
+    { state: 'locked',      label: 'For the future',      extra: 'Available/Locked' },
   ]
 
   // ── OE / ME from completed and inProgress lists ───────────
@@ -225,7 +230,7 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
     { label: 'Senior',    span: 2 },
   ]
 
-  // 💡 FIXED: Organized Elective List with explicit theme properties
+  // Major Elective List
   const MejorElectiveList = [
     { code: "CME460", name: "Natural Gas Processing", theme: { label: "Gas Processing & Petrochemicals", bg: "#e0f2fe", txt: "#0369a1", bdr: "#bae6fd" } },
     { code: "CME461", name: "Petroleum Refining Process", theme: { label: "Gas Processing & Petrochemicals", bg: "#e0f2fe", txt: "#0369a1", bdr: "#bae6fd" } },
@@ -271,6 +276,45 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
     c.type2 !== 'ME' &&
     c.state === 'completed'
   )
+
+  // ── Filter & Sort Logic Computation for Completed Courses ──
+  const termOrder = { fall: 1, win: 2, spr: 3, sum: 4 };
+  
+  const processedCompleted = [...(completed || [])]
+    .filter(c => {
+      if (!completedSearch.trim()) return true;
+      const search = completedSearch.toLowerCase();
+      return (
+        c.code?.toLowerCase().includes(search) ||
+        c.name?.toLowerCase().includes(search) ||
+        c.grade?.toLowerCase().includes(search) ||
+        c.term?.toLowerCase().includes(search) ||
+        c.enrolledDate?.toLowerCase().includes(search)
+      );
+    })
+    .sort((a, b) => {
+      let score = 0;
+
+      if (completedSortKey === "date") {
+        const yearA = parseInt(a.enrolledDate?.split("-")[0] || 0);
+        const yearB = parseInt(b.enrolledDate?.split("-")[0] || 0);
+        if (yearA !== yearB) {
+          score = yearA - yearB;
+        } else {
+          score = (termOrder[a.term?.toLowerCase()] || 999) - (termOrder[b.term?.toLowerCase()] || 999);
+        }
+      } else if (completedSortKey === "name") {
+        score = (a.name || "").localeCompare(b.name || "");
+      } else if (completedSortKey === "code") {
+        score = (a.code || "").localeCompare(b.code || "");
+      } else if (completedSortKey === "credits") {
+        score = (a.credits || 0) - (b.credits || 0);
+      } else if (completedSortKey === "grade") {
+        score = (a.grade || "").localeCompare(b.grade || "");
+      }
+
+      return isInverted ? -score : score;
+    });
 
   return (
     <div ref={containerRef} style={{ overflowX: 'auto', padding: '1rem', position: 'relative' }}>
@@ -417,7 +461,7 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
           </div>
         )}
 
-        {/* ── 📊 INCREASED SIZE: MAJOR ELECTIVES CHECKER TABLE (PLACED ABOVE COMPLETED) ── */}
+        {/* ── MAJOR ELECTIVES CHECKER TABLE ── */}
         <div style={{ marginTop: 48, borderTop: '3px solid #1a3a6a', paddingTop: 24 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: 20 }}>
             <span style={{ fontSize: 22, fontWeight: 800, color: '#1a3a6a', letterSpacing: '-0.3px' }}>
@@ -448,8 +492,6 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
 
                   return (
                     <tr key={course.code + idx} style={{ background: idx % 2 === 0 ? '#fff' : '#f7fafc', borderBottom: '1px solid #e2e8f0', transition: 'background 0.15s' }}>
-                      
-                      {/* Theme Specialty Track Options Column */}
                       <td style={{ padding: '16px 20px', verticalAlign: 'middle' }}>
                         <span style={{ 
                           fontSize: '13px', 
@@ -470,7 +512,6 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
                       <td style={{ padding: '16px 20px', fontWeight: 800, color: '#1a3a6a', fontFamily: 'monospace', fontSize: '16px' }}>{course.code}</td>
                       <td style={{ padding: '16px 20px', color: '#2d3748', fontWeight: 600, fontSize: '15px' }}>{course.name}</td>
                       
-                      {/* Prerequisites Structure (Clean: Removed emoji tags) */}
                       <td style={{ padding: '16px 20px' }}>
                         {directPrereqs.length === 0 ? (
                           <span style={{ color: '#a0aec0', fontStyle: 'italic', fontSize: '14px' }}>None</span>
@@ -526,12 +567,48 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
           </div>
         </div>
 
-        {/* ── 📊 INCREASED SIZE: COMPLETED COURSES TABLE ── */}
+        {/* ── 📊 COMPLETED COURSES TABLE (WITH CONTROL BAR) ── */}
         {completed?.length > 0 && (
           <div style={{ marginTop: 48, borderTop: '2px solid #cbd5e0', paddingTop: 24 }}>
             <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, color: '#2d3748' }}>
-              📚 Student History — Passed Records Matrix ({completed.length})
+              📚 Student History : {processedCompleted.length} Completed Courses 
             </div>
+
+            {/* Interactive Search, Filter & Ordering Dashboard Controls */}
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ flex: '1', minWidth: '260px' }}>
+                <input 
+                  type="text" 
+                  placeholder="🔍 Search anything (Code, Name, Grade, Term, Year)..." 
+                  value={completedSearch}
+                  onChange={(e) => setCompletedSearch(e.target.value)}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '14px', outline: 'none' }}
+                />
+              </div>
+              <div>
+                <select 
+                  value={completedSortKey} 
+                  onChange={(e) => setCompletedSortKey(e.target.value)}
+                  style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '14px', background: '#fff', fontWeight: 600, color: '#4a5568', cursor: 'pointer' }}
+                >
+                  <option value="date">Sort Option: Term & Year (Default)</option>
+                  <option value="code">Sort Option: Course Code</option>
+                  <option value="name">Sort Option: Course Title Name</option>
+                  <option value="credits">Sort Option: Credit Hours</option>
+                  <option value="grade">Sort Option: Performance Grade</option>
+                </select>
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 600, color: '#4a5568', cursor: 'pointer', userSelect: 'none' }}>
+                <input 
+                  type="checkbox" 
+                  checked={isInverted} 
+                  onChange={(e) => setIsInverted(e.target.checked)}
+                  style={{ width: '17px', height: '17px', cursor: 'pointer' }}
+                />
+                Invert Ordering (Newest First / Descending)
+              </label>
+            </div>
+
             <div style={{ overflowX: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15, minWidth: 950, border: '1px solid #cbd5e0' }}>
                 <thead>
@@ -544,7 +621,7 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
                   </tr>
                 </thead>
                 <tbody>
-                  {completed.map((c, i) => (
+                  {processedCompleted.map((c, i) => (
                     <tr key={c.code + i} style={{ background: i % 2 === 0 ? '#fff' : '#f7fafc', borderBottom: '1px solid #e2e8f0' }}>
                       <td style={{ padding: '14px 18px', border: '1px solid #e2e8f0', fontWeight: 700, color: '#1a3a6a', fontFamily: 'monospace', fontSize: '15px' }}>{c.code}</td>
                       <td style={{ padding: '14px 18px', border: '1px solid #e2e8f0', color: '#2d3748', fontWeight: 500 }}>{c.name ?? '—'}</td>
@@ -555,6 +632,13 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
                       <td style={{ padding: '14px 18px', border: '1px solid #e2e8f0', color: '#2b6cb0', fontWeight: '600', fontFamily: 'monospace' }}>{c.type2  ?? '—'}</td>
                     </tr>
                   ))}
+                  {processedCompleted.length === 0 && (
+                    <tr>
+                      <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#a0aec0', fontStyle: 'italic' }}>
+                        No matched completed courses found for your search query criteria.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
