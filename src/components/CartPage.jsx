@@ -164,19 +164,37 @@ export default function CartPage({
   const activeTotalCr   = activeItems.reduce((acc, c) => acc + (c.credits ?? 0), 0)
   const maxCredits      = resolvedTab === 'SUM' ? 7 : 20
 
-  // 💡 FIXED: Track submittedDbCodes.size to handle mutated Set instances from App.jsx parent context
+  // 💡 NEW: Normalizes incoming db configurations into clean upper-case strings to guarantee matching
+  const normalizedSubmittedCodes = useMemo(() => {
+    const codeSet = new Set();
+    if (!submittedDbCodes) return codeSet;
+
+    const rawItems = submittedDbCodes instanceof Set 
+      ? Array.from(submittedDbCodes) 
+      : Array.isArray(submittedDbCodes) ? submittedDbCodes : [];
+
+    rawItems.forEach(item => {
+      if (!item) return;
+      if (typeof item === 'string') {
+        codeSet.add(item.trim().toUpperCase());
+      } else if (typeof item === 'object') {
+        const structuralCode = item.course_code || item.code || item.course_id;
+        if (structuralCode) {
+          codeSet.add(structuralCode.toString().trim().toUpperCase());
+        }
+      }
+    });
+    return codeSet;
+  }, [submittedDbCodes, submittedDbCodes?.size]);
+
+  // 💡 FIXED: Evaluates based on our sanitized string lookup sets
   const isCurrentTabSubmitted = useMemo(() => {
     if (!activeItems || activeItems.length === 0) return false;
     return activeItems.every(item => {
-      if (submittedDbCodes instanceof Set) {
-        return submittedDbCodes.has(item.code);
-      }
-      if (Array.isArray(submittedDbCodes)) {
-        return submittedDbCodes.includes(item.code);
-      }
-      return false;
+      const itemCodeClean = item.code?.trim().toUpperCase();
+      return normalizedSubmittedCodes.has(itemCodeClean);
     });
-  }, [activeItems, submittedDbCodes, submittedDbCodes?.size])
+  }, [activeItems, normalizedSubmittedCodes])
 
   const activeTabHasConflicts = activeConflicts.size > 0
 
@@ -266,7 +284,6 @@ export default function CartPage({
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
           {submitError && <span style={{ fontSize: 13, color: '#dc2626' }}>{submitError}</span>}
 
-          {/* 💡 FIXED: Unified Button Framework Transition Layout to handle switching seamlessly */}
           {!isCurrentTabSubmitted ? (
             <button onClick={handleSubmit}
               disabled={submitLoading || activeItems.length === 0 || activeTabHasConflicts}
@@ -341,6 +358,9 @@ export default function CartPage({
                   if (sec?.Thurs) daysArr.push('Thurs')
                   if (sec?.Fri)   daysArr.push('Fri')
                   
+                  // 💡 FIXED: Remove button now checks against normalized uppercase strings
+                  const isItemSubmitted = normalizedSubmittedCodes.has(item.code?.trim().toUpperCase());
+
                   return (
                     <div key={item.code} className={`${s.item} ${isConflict ? s.itemConflict : ''}`} style={{ display: 'flex', width: '100%', border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                       <div style={{ width: '5px', flexShrink: 0, background: isConflict ? '#dc2626' : color.border }} />
@@ -351,7 +371,7 @@ export default function CartPage({
                             <span style={{ fontSize: '11px', background: '#f7fafc', border: '1px solid #e2e8f0', padding: '1px 5px', borderRadius: '4px', color: '#4a5568' }}>{item.credits} cr</span>
                             {isConflict && <span style={{ color: '#dc2626', fontSize: '11px', fontWeight: '700', background: '#fee2e2', padding: '1px 6px', borderRadius: '4px' }}>⚠ conflict</span>}
                           </div>
-                          {!submittedDbCodes.has(item.code) && (
+                          {!isItemSubmitted && (
                             <button className={s.removeBtn} onClick={() => onRemove(item.code)} style={{ color: '#e53e3e', background: 'none', border: '1px solid #fed7d7', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>Remove</button>
                           )}
                         </div>
