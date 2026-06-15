@@ -26,6 +26,7 @@ function toMins(timeStr) {
   return isNaN(h) ? null : h * 60 + m
 }
 
+// Generates accessible display labels for timeline hour offsets
 function hourLabel(h) {
   if (h === 12) return '12pm'
   return h > 12 ? `${h - 12}pm` : `${h}am`
@@ -81,7 +82,6 @@ function detectConflicts(blocks) {
   return conflicts
 }
 
-// Grid layout mapping component
 function ScheduleGrid({ blocks, conflicts }) {
   const hours = Array.from({ length: HOURS + 1 }, (_, i) => START_H + i)
   return (
@@ -153,9 +153,11 @@ export default function CartPage({
   cartItems = [],
   onRemove,
   onBack,
-  studentId,
   onRefreshSubmissions
 }) {
+  // 💡 LOCAL STORAGE LOOKUP: Extracts authentication token from memory directly
+  const studentId = localStorage.getItem('studentId')
+
   const [activeTab, setActiveTab] = useState(null)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [withdrawLoading, setWithdrawLoading] = useState(false)
@@ -190,6 +192,7 @@ export default function CartPage({
   const activeDrafts = useMemo(() => activeItems.filter(i => !i.fromDb), [activeItems])
   const activeEnrolled = useMemo(() => activeItems.filter(i => i.fromDb), [activeItems])
 
+  // ── Handle API Enrollment Submission ──
   async function handleSubmit() {
     if (activeDrafts.length === 0) return
     setSubmitLoading(true)
@@ -223,6 +226,7 @@ export default function CartPage({
     }
   }
 
+  // ── Handle API Enrollment Withdrawal ──
   async function handleWithdraw() {
     if (activeEnrolled.length === 0) return
     setWithdrawLoading(true)
@@ -276,7 +280,7 @@ export default function CartPage({
         </span>
         {hasConflicts && <span className={s.conflictPill}>⚠ Time conflict detected</span>}
 
-        {/* ── 💡 DIAGNOSTIC BADGE BOX INJECTED ── */}
+        {/* Diagnostic box visualizing localStorage fetch attributes */}
         <div style={{
           background: '#fff3cd',
           border: '1px solid #ffeeba',
