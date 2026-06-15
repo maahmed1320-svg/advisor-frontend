@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react'
 import s from './CartPage.module.css'
 
-
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
 const START_H = 9
 const END_H   = 22
 const HOURS   = END_H - START_H   
-const TOTAL_M = HOURS * 60        
+const TOTAL_M = HOURS * 60         
 
 const PALETTE = [
   { bg: '#dce8f5', border: '#2a6aaa', text: '#0a2a5a' },
@@ -48,7 +47,17 @@ function buildBlocks(cartItems) {
       const endM   = toMins(sec.mtg_end)
       if (daysField.length && startM && endM) {
         daysField.forEach(day => {
-          blocks.push({ code: item.code, name: item.name, instructor: item.instructor, day, startM, endM, color, idx })
+          blocks.push({ 
+            code: item.code, 
+            name: item.name, 
+            instructor: item.instructor, 
+            day, 
+            startM, 
+            endM, 
+            color, 
+            idx,
+            fromDb: item.fromDb 
+          })
         })
       }
     }
@@ -100,17 +109,33 @@ function ScheduleGrid({ blocks, conflicts }) {
                 const top = ((b.startM - START_H * 60) / TOTAL_M * 100).toFixed(4)
                 const ht  = ((b.endM - b.startM) / TOTAL_M * 100).toFixed(4)
                 const hasConflict = conflicts.has(b.code)
+                
+                let blockBackground = b.color.bg;
+                let blockBorderColor = b.color.border;
+                let blockTextColor = b.color.text;
+
+                if (hasConflict) {
+                  blockBackground = '#fee2e2';
+                  blockBorderColor = '#dc2626';
+                  blockTextColor = '#7f1d1d';
+                } else if (b.fromDb) {
+                  blockBackground = '#e2e8f0';
+                  blockBorderColor = '#94a3b8';
+                  blockTextColor = '#475569';
+                }
+
                 return (
                   <div key={i} className={`${s.block} ${hasConflict ? s.blockConflict : ''}`}
                     style={{
                       top: `${top}%`, height: `${ht}%`,
-                      background:  hasConflict ? '#fee2e2' : b.color.bg,
-                      borderColor: hasConflict ? '#dc2626' : b.color.border,
-                      color:       hasConflict ? '#7f1d1d' : b.color.text,
+                      background:  blockBackground,
+                      borderColor: blockBorderColor,
+                      color:       blockTextColor,
                     }}>
                     <div className={s.bCode}>{b.code}</div>
                     <div className={s.bName}>{b.name}</div>
                     {b.instructor && <div className={s.bInst}>{b.instructor.replace('Dr. ', '')}</div>}
+                    {b.fromDb && <div style={{ fontSize: 10, fontWeight: 700, marginTop: 4, color: '#64748b' }}>✓ Enrolled</div>}
                     {hasConflict && <div className={s.bConflictLabel}>⚠ conflict</div>}
                   </div>
                 )
@@ -123,13 +148,19 @@ function ScheduleGrid({ blocks, conflicts }) {
   )
 }
 
-export default function CartPage({ 
-  cartItems = [], 
-  onRemove, 
-  onBack
+export default function CartPage({
+  cartItems = [],
+  onRemove,
+  onBack,
+  studentId,
+  onRefreshSubmissions
 }) {
+  const [activeTab, setActiveTab] = useState(null)
+  const [submitLoading, setSubmitLoading] = useState(false)
+  const [withdrawLoading, setWithdrawLoading] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
 
-  const [activeTab,       setActiveTab]       = useState(null) 
+  const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
   const falItems = cartItems.filter(i => (i.section?.session ?? '').toUpperCase().includes('FAL'))
   const sumItems = cartItems.filter(i => (i.section?.session ?? '').toUpperCase().includes('SUM'))
@@ -146,7 +177,6 @@ export default function CartPage({
   const allConflicts = useMemo(() => new Set([...falConflicts, ...sumConflicts]), [falConflicts, sumConflicts])
 
   const hasConflicts = allConflicts.size > 0
-  const totalCr       = cartItems.reduce((acc, c) => acc + (c.credits ?? 0), 0)
 
   const activeItems     = resolvedTab === 'FAL' ? falItems     : sumItems
   const activeBlocks    = resolvedTab === 'FAL' ? falBlocks    : sumBlocks
@@ -154,6 +184,75 @@ export default function CartPage({
 
   const activeTotalCr   = activeItems.reduce((acc, c) => acc + (c.credits ?? 0), 0)
   const maxCredits      = resolvedTab === 'SUM' ? 7 : 20
+  const activeTabHasConflicts = activeConflicts.size > 0
+
+  const activeDrafts = useMemo(() => activeItems.filter(i => !i.fromDb), [activeItems])
+  const activeEnrolled = useMemo(() => activeItems.filter(i => i.fromDb), [activeItems])
+
+  // ── Handle API Enrollment Submission ──
+  async function handleSubmit() {
+    if (activeDrafts.length === 0) return
+    setSubmitLoading(true)
+    setSubmitError(null)
+
+    try {
+      const res = await fetch(`${BASE}/api/student/${studentId}/enroll`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courses: activeDrafts.map(item => ({
+            code: item.code,
+            session: item.section?.session,
+            class_nbr: item.section?.class_nbr // Passed to the database row
+          }))
+        })
+      })
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || "Submission request rejected by server.")
+      }
+
+      if (onRefreshSubmissions) {
+        await onRefreshSubmissions(studentId)
+      }
+    } catch (e) {
+      setSubmitError(e.message)
+    } finally {
+      setSubmitLoading(false)
+    }
+  }
+
+  // ── Handle API Enrollment Withdrawal ──
+  async function handleWithdraw() {
+    if (activeEnrolled.length === 0) return
+    setWithdrawLoading(true)
+    setSubmitError(null)
+
+    try {
+      const res = await fetch(`${BASE}/api/student/${studentId}/enroll`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codes: activeEnrolled.map(i => i.code) })
+      })
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || "Withdrawal request rejected by server.")
+      }
+
+      // Drop withdrawn targets from front-end layout variables natively
+      activeEnrolled.forEach(item => onRemove(item.code))
+      
+      if (onRefreshSubmissions) {
+        await onRefreshSubmissions(studentId)
+      }
+    } catch (e) {
+      setSubmitError(e.message)
+    } finally {
+      setWithdrawLoading(false)
+    }
+  }
 
   const tabBase = {
     padding: '8px 24px', fontSize: 18, fontWeight: 600,
@@ -179,7 +278,36 @@ export default function CartPage({
         </span>
         {hasConflicts && <span className={s.conflictPill}>⚠ Time conflict detected</span>}
 
-        
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center' }}>
+          {submitError && <span style={{ fontSize: 13, color: '#dc2626', fontWeight: 500 }}>{submitError}</span>}
+          
+          <button 
+            onClick={handleSubmit}
+            disabled={activeDrafts.length === 0 || submitLoading || activeTabHasConflicts}
+            style={{ 
+              padding: '8px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: 13, color: '#fff',
+              background: (activeDrafts.length === 0 || activeTabHasConflicts) ? '#ccc' : '#1c7781',
+              cursor: (activeDrafts.length === 0 || activeTabHasConflicts) ? 'not-allowed' : 'pointer',
+              opacity: submitLoading ? 0.7 : 1
+            }}
+          >
+            {submitLoading ? 'Submitting...' : `Submit New Changes (${activeDrafts.length})`}
+          </button>
+
+          <button 
+            onClick={handleWithdraw}
+            disabled={activeEnrolled.length === 0 || withdrawLoading}
+            style={{ 
+              padding: '8px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: 13,
+              background: activeEnrolled.length === 0 ? '#e5e5e5' : '#7f1d1d',
+              color: activeEnrolled.length === 0 ? '#aaa' : '#fff',
+              cursor: activeEnrolled.length === 0 ? 'not-allowed' : 'pointer',
+              opacity: withdrawLoading ? 0.7 : 1
+            }}
+          >
+            {withdrawLoading ? 'Withdrawing...' : `✕ Withdraw Enrolled (${activeEnrolled.length})`}
+          </button>
+        </div>
       </div>
 
       {/* ── Base Workspace Box ── */}
@@ -221,6 +349,7 @@ export default function CartPage({
               {/* Course Detail List Section */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {activeItems.map((item, idx) => {
+                  const isDbItem = !!item.fromDb
                   const color      = PALETTE[idx % PALETTE.length]
                   const isConflict = activeConflicts.has(item.code)
                   const sec        = item.section
@@ -232,26 +361,36 @@ export default function CartPage({
                   if (sec?.Fri)   daysArr.push('Fri')
                   
                   return (
-                    <div key={item.code} className={`${s.item} ${isConflict ? s.itemConflict : ''}`} style={{ display: 'flex', width: '100%', border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                      <div style={{ width: '5px', flexShrink: 0, background: isConflict ? '#dc2626' : color.border }} />
+                    <div key={item.code} className={`${s.item} ${isConflict ? s.itemConflict : ''}`} 
+                      style={{ 
+                        display: 'flex', width: '100%', border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                        opacity: isDbItem ? 0.65 : 1
+                      }}
+                    >
+                      <div style={{ width: '5px', flexShrink: 0, background: isConflict ? '#dc2626' : (isDbItem ? '#94a3b8' : color.border) }} />
                       <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <strong style={{ fontSize: '25px', color: '#1a3a6a', fontFamily: 'monospace' }}>{item.code}</strong>
+                            <strong style={{ fontSize: '25px', color: isDbItem ? '#475569' : '#1a3a6a', fontFamily: 'monospace' }}>{item.code}</strong>
                             <span style={{ fontSize: '11px', background: '#f7fafc', border: '1px solid #e2e8f0', padding: '1px 5px', borderRadius: '4px', color: '#4a5568' }}>{item.credits} cr</span>
                             {isConflict && <span style={{ color: '#dc2626', fontSize: '11px', fontWeight: '700', background: '#fee2e2', padding: '1px 6px', borderRadius: '4px' }}>⚠ conflict</span>}
                           </div>
                           
-                          {/* Just render the button cleanly without the old condition */}
-                          <button className={s.removeBtn} onClick={() => onRemove(item.code)} style={{ color: '#e53e3e', background: 'none', border: '1px solid #fed7d7', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
-                            Remove
-                          </button>
+                          {isDbItem ? (
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#16a34a', background: '#dcfce7', padding: '3px 8px', borderRadius: 4 }}>
+                              ✓ Enrolled
+                            </span>
+                          ) : (
+                            <button className={s.removeBtn} onClick={() => onRemove(item.code)} style={{ color: '#e53e3e', background: 'none', border: '1px solid #fed7d7', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                              Remove
+                            </button>
+                          )}
                         </div>
-                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#2d3748', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: isDbItem ? '#718096' : '#2d3748', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
                         {sec && (
                           <div style={{ fontSize: '12px', color: '#718096', display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px' }}>
                             <div>
-                              <span style={{ background: '#ebf8ff', color: '#2b6cb0', padding: '1px 4px', borderRadius: '3px', fontSize: '10px', fontWeight: '700', marginRight: '6px' }}>ID: {sec.section || '101'}</span>
+                              <span style={{ background: isDbItem ? '#f1f5f9' : '#ebf8ff', color: isDbItem ? '#475569' : '#2b6cb0', padding: '1px 4px', borderRadius: '3px', fontSize: '10px', fontWeight: '700', marginRight: '6px' }}>ID: {sec.section || '101'}</span>
                               <span>Class Nbr: <strong>{sec.class_nbr}</strong></span>
                             </div>
                             <div style={{ fontSize: '11px', color: '#4a5568' }}>

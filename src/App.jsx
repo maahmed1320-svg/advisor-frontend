@@ -30,7 +30,7 @@ export default function App() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Fetch submitted enrollments from DB + restore cart ────
-  const fetchActiveDbSubmissions = useCallback(async (id) => {
+  const fetchActiveDbSubmissions = useCallback(async (id, freshResultPayload = null) => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/student/${id}/enrollments_raw`)
       if (!res.ok) return
@@ -40,51 +40,88 @@ export default function App() {
       // Rebuild submittedDbCodes set
       setSubmittedDbCodes(new Set(submissions.map(s => s.course_code)))
 
-      // Restore submitted courses back into cart so they show as locked
+      // Use the passed payload if available, otherwise fallback to the current component state
+      const targetLookupSource = freshResultPayload || result;
+
       if (submissions.length > 0) {
         setCartItems(prev => {
-          // Keep any non-submitted items already in cart, then add submitted ones
           const existingCodes = new Set(prev.map(i => i.code))
+          
           const restored = submissions
             .filter(s => !existingCodes.has(s.course_code))
-            .map(s => ({
-              code:       s.course_code,
-              name:       s.name       ?? s.course_code,
-              credits:    s.credits    ?? 0,
-              instructor: s.instructor ?? 'TBA',
-              room:       s.room       ?? 'TBA',
-              section: {
-                class_nbr: s.class_nbr  ?? null,
-                section:   s.section    ?? null,
-                session:   s.session    ?? 'FAL',
-                campus:    s.campus     ?? 'AD',
-                room:      s.room       ?? 'TBA',
-                mtg_start: s.mtg_start  ?? null,
-                mtg_end:   s.mtg_end    ?? null,
+            .map(s => {
+              // 1. Look up the full master course details from the academic result mapping
+              const masterCourse = targetLookupSource?.recommendations?.find(c => c.code === s.course_code) ||
+                                   targetLookupSource?.All_courses?.find(c => c.code === s.course_code);
+
+              // 2. Extract and filter all rows matching the chosen registration number
+              const matchedSections = masterCourse?.sections?.filter(
+                sec => String(sec.class_nbr) === String(s.class_nbr)
+              ) || [];
+
+              const primarySec = matchedSections[0] || {};
+              
+              const instructorName = primarySec 
+                ? `${primarySec.first_name ?? ''} ${primarySec.last_name ?? ''}`.trim() 
+                : (s.instructor ?? 'TBA');
+
+              // 3. Construct a standard object structure with your critical fromDb flag
+              return {
+                code:       s.course_code,
+                name:       masterCourse?.name ?? s.name ?? s.course_code,
+                credits:    masterCourse?.credits ?? primarySec?.max_units ?? s.credits ?? 0,
+                instructor: instructorName || 'TBA',
+                room:       primarySec?.room ?? s.room ?? 'TBA',
+                fromDb:     true, // 💡 CRITICAL ATTRIBUTE: Distinguishes DB records from client session drafts
+                section: {
+                  class_nbr:   String(s.class_nbr),
+                  section:     primarySec?.section ?? s.section ?? null,
+                  session:     primarySec?.session ?? s.session ?? 'FAL',
+                  campus:      primarySec?.campus ?? s.campus ?? 'AD',
+                  room:        primarySec?.room ?? s.room ?? 'TBA',
+                  mtg_start:   primarySec?.mtg_start ?? s.mtg_start ?? null,
+                  mtg_end:     primarySec?.mtg_end ?? s.mtg_end ?? null,
+                  Mon:         primarySec?.Mon ?? false,
+                  Tues:        primarySec?.Tues ?? false,
+                  Wed:         primarySec?.Wed ?? false,
+                  Thurs:       primarySec?.Thurs ?? false,
+                  Fri:         primarySec?.Fri ?? false,
+                  // Fallback array to avoid crashing if master course list is unpopulated
+                  subSections: matchedSections.length > 0 ? matchedSections : [{
+                    section:   s.section ?? null,
+                    session:   s.session ?? 'FAL',
+                    campus:    s.campus ?? 'AD',
+                    room:      s.room ?? 'TBA',
+                    mtg_start: s.mtg_start ?? null,
+                    mtg_end:   s.mtg_end ?? null,
+                    class_nbr: s.class_nbr ?? null,
+                  }]
+                }
               }
-            }))
+            })
           return [...prev, ...restored]
         })
       }
     } catch (err) {
       console.error('Failed syncing active cart table state mappings:', err)
     }
-  }, [])
+  }, [result])
 
   async function loadStudent(id) {
     const payload = await fetchStudent(id)
     setResult(payload.result)
+    return payload.result; // 💡 RETURN DIRECTLY: Hands payload forward to prevent async lag delays
   }
 
   async function handleLogin(id) {
     setLoading(true); setError(null)
     try {
-      await loadStudent(id)
+      const freshResult = await loadStudent(id) // Capture payload
       setStudentId(id)
       setPassFailCourses({})
       localStorage.setItem('studentId', id)
-      setCartItems([])                        // clear first
-      await fetchActiveDbSubmissions(id)      // then restore submitted ones from DB
+      setCartItems([]) 
+      await fetchActiveDbSubmissions(id, freshResult) // Pass directly into lookup parameters
     } catch (e) {
       setError(e.message === 'Student not found' ? 'Student ID not found.' : `Error: ${e.message}`)
     } finally { setLoading(false) }
@@ -97,13 +134,11 @@ export default function App() {
       const payload = await computeAdvisory(studentId, newOv)
       setResult(payload.result)
       const blocked = payload.result.blockedSet
-      // Keep submitted courses in cart even if they become blocked
       setCartItems(prev => prev.filter(c => !blocked.includes(c.code) || submittedDbCodes.has(c.code)))
     } catch (e) { console.error('Compute error:', e) }
   }, [PassFailCourses, studentId, submittedDbCodes])
 
   function handleToggleCart(code, section = null) {
-    // Silently block — submitted courses are locked
     if (submittedDbCodes.has(code)) return
 
     setCartItems(prev => {
@@ -173,6 +208,7 @@ export default function App() {
         credits:    newCourseCredits,
         room:       primarySec?.room ?? 'TBA',
         instructor: instructorName || 'TBA',
+        fromDb:     false, // Added natively via client UI selection session
         section,
       }]
     })
@@ -186,7 +222,6 @@ export default function App() {
     localStorage.removeItem('studentId')
   }
 
-  // ── Gate: show login until result is loaded ───────────────
   if (!result) return <Login onLogin={handleLogin} loading={loading} error={error} />
 
   const { student, inProgress, completed, blockedSet,
@@ -199,7 +234,6 @@ export default function App() {
     return ['C+', 'C', 'C-', 'D+', 'D', 'F', 'FA'].includes(course.grade.toUpperCase().trim())
   })
 
-  // ── Study plan view ───────────────────────────────────────
   if (showChains) {
     return (
       <div className={s.shell}>
@@ -234,7 +268,6 @@ export default function App() {
     )
   }
 
-  // ── Cart page view ────────────────────────────────────────
   if (showCartPage) {
     return (
       <CartPage
@@ -244,14 +277,10 @@ export default function App() {
           setShowCartPage(false)
           if (studentId) fetchActiveDbSubmissions(studentId)
         }}
-        studentId={studentId}
-        submittedDbCodes={submittedDbCodes}
-        onRefreshSubmissions={fetchActiveDbSubmissions}
       />
     )
   }
 
-  // ── Main dashboard ────────────────────────────────────────
   return (
     <div className={s.shell}>
       <header className={s.topbar} style={{ padding: '20px 32px', minHeight: 72, gap: 24 }}>
@@ -282,7 +311,6 @@ export default function App() {
         <button onClick={handleLogout} className={s.logoutBtn}>Sign out</button>
       </header>
 
-      {/* ── Stats bar ───────────────────────────────────────── */}
       <div className={s.stats}>
         {[
           { label: 'CGPA',      value: student.cgpa?.toFixed(2) ?? '—' },
@@ -299,7 +327,6 @@ export default function App() {
         ))}
       </div>
 
-      {/* ── Low CGPA banner ─────────────────────────────────── */}
       {student.cgpa < 2 && (
         <div className={s.gpaAlertBanner}>
           <div onClick={() => setGpaPanelOpen(prev => !prev)} className={s.gpaAlertHeader}>
@@ -361,7 +388,6 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Main columns ─────────────────────────────────────── */}
       <div className={s.cols} style={{ gridTemplateColumns: '1.5fr 3.5fr' }}>
         <div className={s.sideCol} style={{ width: '100%' }}>
           <section className={s.section}>

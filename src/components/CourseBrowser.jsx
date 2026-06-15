@@ -104,7 +104,6 @@ export default function CourseBrowser({
   }, [recommendations, All_courses, filter, search, termFilter, campusFilter, blockedSet])
 
   function handleAdd(r) {
-    // Fail-safe protection layer mapping checks
     if (submittedDbCodes?.has?.(r.code)) return
     const groups = r.displayGroups || []
     const chosenClassNbr = selected[r.code]
@@ -197,11 +196,17 @@ export default function CourseBrowser({
         {visibleCourses.map(r => {
           const inCart             = (cart || []).some(c => c.code === r.code)
           const blocked           = blockedSet.includes(r.code)
-          // 💡 SAFE CHECK: Added defensive check to prevent crashing if set instance isn't ready
           const isAlreadySubmitted = submittedDbCodes?.has?.(r.code) ?? false
           const isOpen            = expanded[r.code] || false
           const displayGroups     = r.displayGroups || []
-          const currentSelection  = selected[r.code]
+          
+          // Match and identify verified database sync rows from global props
+          const cartItemForCourse = (cart || []).find(c => c.code === r.code)
+          const isRecordFromDb    = !!cartItemForCourse?.fromDb
+
+          // Auto-default selection pointer to the verified class registration ID
+          const currentSelection  = selected[r.code] ?? cartItemForCourse?.section?.class_nbr
+
           const displayCredits    = r.credits ?? displayGroups[0]?.primary?.max_units ?? 0
           const hasPrereqsMet     = filter === 'allful' ? true : r.prereqsMet !== false
           const courseCredits     = r.credits ?? displayGroups[0]?.primary?.max_units ?? 0
@@ -218,7 +223,7 @@ export default function CourseBrowser({
               style={isAlreadySubmitted ? {
                 borderLeft: '3px solid #6b46c1',
                 background: '#faf5ff',
-                opacity: 0.95,
+                opacity: 0.55, // Low brightness style mapping rule applied
               } : {}}
             >
 
@@ -242,12 +247,10 @@ export default function CourseBrowser({
                 )}
 
                 <div className={s.hRight}>
-                  {/* Badges */}
                   {blocked && (
                     <span className={`${s.badge} ${s.badgeBlocked}`}>blocked</span>
                   )}
                   
-                  {/* 💡 STATE NOTIFIER: Explicit purple indicator text box badge */}
                   {isAlreadySubmitted && (
                     <span style={{
                       fontSize: 11, fontWeight: 700, color: '#6b46c1',
@@ -260,30 +263,21 @@ export default function CourseBrowser({
 
                   <span className={s.cr}>{displayCredits} cr</span>
 
-                  {!blocked && (
+                  {/* Drop out button panel entirely for confirmed records */}
+                  {!blocked && !isAlreadySubmitted && (
                     <button
                       className={`${s.addBtn}
-                        ${isAlreadySubmitted                          ? s.addBtnDisabled : ''}
-                        ${inCart && !isAlreadySubmitted               ? s.addBtnIn       : ''}
-                        ${((!hasPrereqsMet || isLimitExceeded) && !inCart && !isAlreadySubmitted) ? s.addBtnDisabled : ''}
+                        ${inCart ? s.addBtnIn : ''}
+                        ${((!hasPrereqsMet || isLimitExceeded) && !inCart) ? s.addBtnDisabled : ''}
                       `}
-                      style={isAlreadySubmitted ? {
-                        background:    '#f3e8ff',
-                        color:         '#6b46c1',
-                        borderColor:   '#e9d5ff',
-                        cursor:        'not-allowed',
-                        pointerEvents: 'none',
-                      } : {}}
                       onClick={e => {
                         e.stopPropagation()
-                        if (isAlreadySubmitted) return
                         if (!hasPrereqsMet && !inCart) return
                         if (isLimitExceeded  && !inCart) return
                         handleAdd(r)
                       }}
                     >
-                      {isAlreadySubmitted ? '✓ Enrolled'
-                        : inCart          ? '✓ Added'
+                      {inCart          ? '✓ Added'
                         : !hasPrereqsMet  ? '🔒 Locked'
                         : isLimitExceeded ? '⚠️ Max Credits'
                         : '+ Add'}
@@ -308,7 +302,7 @@ export default function CourseBrowser({
                   </div>
 
                   {displayGroups.map(group => {
-                    const isSelected = currentSelection === group.class_nbr ||
+                    const isSelected = String(currentSelection) === String(group.class_nbr) ||
                       (currentSelection === undefined && displayGroups[0].class_nbr === group.class_nbr)
 
                     return (
@@ -321,6 +315,7 @@ export default function CourseBrowser({
                           background:   isAlreadySubmitted
                             ? (isSelected ? '#e9d5ff' : '#f3e8ff')
                             : (isSelected ? '#f7fafc'  : '#fff'),
+                          // Lock clicks and disable cursor options on database items
                           cursor:        isAlreadySubmitted ? 'not-allowed' : 'pointer',
                           opacity:       isAlreadySubmitted ? 0.75 : 1,
                           pointerEvents: isAlreadySubmitted ? 'none' : 'auto',
@@ -332,7 +327,6 @@ export default function CourseBrowser({
                         }}
                       >
                         {group.subSections.map((subSec, sIdx) => (
-                          // 💡 SAFE TRACKING KEYS: Replaced array map indexes with robust key structures to satisfy compiler engine
                           <div key={`${group.class_nbr}-${sIdx}`} className={s.secRow}
                             style={{
                               borderBottom: sIdx < group.subSections.length - 1 ? '1px dashed #edf2f7' : 'none',
@@ -345,9 +339,9 @@ export default function CourseBrowser({
                                 : <span style={{ width: 12, display: 'inline-block' }} />}
                             </span>
 
-                            <span className={s.cClass}>
+                            <span className={s.classNum}>
                               {sIdx === 0
-                                ? <span className={s.classNum} style={{ fontWeight: 700 }}>{group.class_nbr}</span>
+                                ? <span style={{ fontWeight: 700 }}>{group.class_nbr}</span>
                                 : <span style={{ color: '#aaa', fontSize: 11 }}>↳ cont.</span>}
                             </span>
 
