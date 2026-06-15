@@ -81,6 +81,7 @@ function detectConflicts(blocks) {
   return conflicts
 }
 
+// Grid layout mapping component
 function ScheduleGrid({ blocks, conflicts }) {
   const hours = Array.from({ length: HOURS + 1 }, (_, i) => START_H + i)
   return (
@@ -189,7 +190,6 @@ export default function CartPage({
   const activeDrafts = useMemo(() => activeItems.filter(i => !i.fromDb), [activeItems])
   const activeEnrolled = useMemo(() => activeItems.filter(i => i.fromDb), [activeItems])
 
-  // ── Handle API Enrollment Submission ──
   async function handleSubmit() {
     if (activeDrafts.length === 0) return
     setSubmitLoading(true)
@@ -203,7 +203,7 @@ export default function CartPage({
           courses: activeDrafts.map(item => ({
             code: item.code,
             session: item.section?.session,
-            class_nbr: item.section?.class_nbr // Passed to the database row
+            class_nbr: item.section?.class_nbr 
           }))
         })
       })
@@ -223,7 +223,6 @@ export default function CartPage({
     }
   }
 
-  // ── Handle API Enrollment Withdrawal ──
   async function handleWithdraw() {
     if (activeEnrolled.length === 0) return
     setWithdrawLoading(true)
@@ -241,7 +240,6 @@ export default function CartPage({
         throw new Error(errData.error || "Withdrawal request rejected by server.")
       }
 
-      // Drop withdrawn targets from front-end layout variables natively
       activeEnrolled.forEach(item => onRemove(item.code))
       
       if (onRefreshSubmissions) {
@@ -277,6 +275,25 @@ export default function CartPage({
           )}
         </span>
         {hasConflicts && <span className={s.conflictPill}>⚠ Time conflict detected</span>}
+
+        {/* ── 💡 DIAGNOSTIC BADGE BOX INJECTED ── */}
+        <div style={{
+          background: '#fff3cd',
+          border: '1px solid #ffeeba',
+          color: '#856404',
+          padding: '6px 14px',
+          borderRadius: '6px',
+          fontSize: '12px',
+          fontFamily: 'monospace',
+          lineHeight: '1.4',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+          marginLeft: '20px'
+        }}>
+          <div><strong>ID Value:</strong> {studentId === undefined ? 'undefined' : studentId === null ? 'null' : `"${studentId}"`}</div>
+          <div><strong>ID Type:</strong> {typeof studentId}</div>
+        </div>
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center' }}>
           {submitError && <span style={{ fontSize: 13, color: '#dc2626', fontWeight: 500 }}>{submitError}</span>}
