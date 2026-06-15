@@ -156,7 +156,6 @@ export default function CartPage({
 }) {
   const studentId = localStorage.getItem('studentId')
 
-  // 💡 MIRRORED STATE: Creates an internal mutable mirror copy of your immutable items prop
   const [localCart, setLocalCart] = useState(cartItems)
   const [activeTab, setActiveTab] = useState(null)
   const [submitLoading, setSubmitLoading] = useState(false)
@@ -165,12 +164,10 @@ export default function CartPage({
 
   const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
-  // Keep mirrored state completely in alignment if the parent forces data updates from outside
   useEffect(() => {
     setLocalCart(cartItems)
   }, [cartItems])
 
-  // 💡 DYNAMIC RE-ROUTING: Swapped all dependency chains to process from localCart state directly
   const falItems = localCart.filter(i => (i.section?.session ?? '').toUpperCase().includes('FAL'))
   const sumItems = localCart.filter(i => (i.section?.session ?? '').toUpperCase().includes('SUM'))
 
@@ -222,7 +219,7 @@ export default function CartPage({
         throw new Error(errData.error || "Submission request rejected by server.")
       }
 
-      // 💡 OPTIMISTIC STATE UPDATE: Flip fromDb to true instantly on front-end UI rows
+      // 1. Update UI locally first
       setLocalCart(prev => prev.map(item => {
         const isCurrentSemesterTab = (item.section?.session ?? '').toUpperCase().includes(resolvedTab);
         if (!item.fromDb && isCurrentSemesterTab) {
@@ -234,6 +231,10 @@ export default function CartPage({
       if (onRefreshSubmissions) {
         await onRefreshSubmissions(studentId)
       }
+
+      // 2. 💡 CRITICAL REFRESH: Reload the page to force the master layout cache to clear out cleanly
+      window.location.reload()
+
     } catch (e) {
       setSubmitError(e.message)
     } finally {
@@ -259,18 +260,21 @@ export default function CartPage({
         throw new Error(errData.error || "Withdrawal request rejected by server.")
       }
 
-      // 💡 OPTIMISTIC STATE UPDATE: Cleanly clear out withdrawn courses from workspace view instantly
+      // 1. Remove item from UI locally first
       setLocalCart(prev => prev.filter(item => {
         const isCurrentSemesterTab = (item.section?.session ?? '').toUpperCase().includes(resolvedTab);
         return !(item.fromDb && isCurrentSemesterTab);
       }))
 
-      // Notify parent app cache engine silently in background
       activeEnrolled.forEach(item => onRemove(item.code))
       
       if (onRefreshSubmissions) {
         await onRefreshSubmissions(studentId)
       }
+
+      // 2. 💡 CRITICAL REFRESH: Reload the page to force the master layout cache to clear out cleanly
+      window.location.reload()
+
     } catch (e) {
       setSubmitError(e.message)
     } finally {
