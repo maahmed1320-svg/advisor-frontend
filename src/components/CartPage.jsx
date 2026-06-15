@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import s from './CartPage.module.css'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
@@ -26,7 +26,6 @@ function toMins(timeStr) {
   return isNaN(h) ? null : h * 60 + m
 }
 
-// Generates accessible display labels for timeline hour offsets
 function hourLabel(h) {
   if (h === 12) return '12pm'
   return h > 12 ? `${h - 12}pm` : `${h}am`
@@ -155,9 +154,10 @@ export default function CartPage({
   onBack,
   onRefreshSubmissions
 }) {
-  // 💡 LOCAL STORAGE LOOKUP: Extracts authentication token from memory directly
   const studentId = localStorage.getItem('studentId')
 
+  // 💡 MIRRORED STATE: Creates an internal mutable mirror copy of your immutable items prop
+  const [localCart, setLocalCart] = useState(cartItems)
   const [activeTab, setActiveTab] = useState(null)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [withdrawLoading, setWithdrawLoading] = useState(false)
@@ -165,16 +165,22 @@ export default function CartPage({
 
   const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
-  const falItems = cartItems.filter(i => (i.section?.session ?? '').toUpperCase().includes('FAL'))
-  const sumItems = cartItems.filter(i => (i.section?.session ?? '').toUpperCase().includes('SUM'))
+  // Keep mirrored state completely in alignment if the parent forces data updates from outside
+  useEffect(() => {
+    setLocalCart(cartItems)
+  }, [cartItems])
+
+  // 💡 DYNAMIC RE-ROUTING: Swapped all dependency chains to process from localCart state directly
+  const falItems = localCart.filter(i => (i.section?.session ?? '').toUpperCase().includes('FAL'))
+  const sumItems = localCart.filter(i => (i.section?.session ?? '').toUpperCase().includes('SUM'))
 
   const hasFal = falItems.length > 0
   const hasSum = sumItems.length > 0
 
   const resolvedTab = activeTab ?? (hasFal ? 'FAL' : hasSum ? 'SUM' : null)
 
-  const falBlocks    = useMemo(() => buildBlocks(falItems),    [cartItems])
-  const sumBlocks    = useMemo(() => buildBlocks(sumItems),    [cartItems])
+  const falBlocks    = useMemo(() => buildBlocks(falItems),    [localCart])
+  const sumBlocks    = useMemo(() => buildBlocks(sumItems),    [localCart])
   const falConflicts = useMemo(() => detectConflicts(falBlocks), [falBlocks])
   const sumConflicts = useMemo(() => detectConflicts(sumBlocks), [sumBlocks])
   const allConflicts = useMemo(() => new Set([...falConflicts, ...sumConflicts]), [falConflicts, sumConflicts])
@@ -216,6 +222,15 @@ export default function CartPage({
         throw new Error(errData.error || "Submission request rejected by server.")
       }
 
+      // 💡 OPTIMISTIC STATE UPDATE: Flip fromDb to true instantly on front-end UI rows
+      setLocalCart(prev => prev.map(item => {
+        const isCurrentSemesterTab = (item.section?.session ?? '').toUpperCase().includes(resolvedTab);
+        if (!item.fromDb && isCurrentSemesterTab) {
+          return { ...item, fromDb: true }
+        }
+        return item
+      }))
+
       if (onRefreshSubmissions) {
         await onRefreshSubmissions(studentId)
       }
@@ -227,14 +242,12 @@ export default function CartPage({
   }
 
   // ── Handle API Enrollment Withdrawal ──
-  // ── Inside CartPage.jsx ──
   async function handleWithdraw() {
     if (activeEnrolled.length === 0) return
     setWithdrawLoading(true)
     setSubmitError(null)
 
     try {
-      // 💡 CHANGED: Swapped endpoint path to /withdraw and switched method to POST
       const res = await fetch(`${BASE}/api/student/${studentId}/withdraw`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -246,13 +259,20 @@ export default function CartPage({
         throw new Error(errData.error || "Withdrawal request rejected by server.")
       }
 
+      // 💡 OPTIMISTIC STATE UPDATE: Cleanly clear out withdrawn courses from workspace view instantly
+      setLocalCart(prev => prev.filter(item => {
+        const isCurrentSemesterTab = (item.section?.session ?? '').toUpperCase().includes(resolvedTab);
+        return !(item.fromDb && isCurrentSemesterTab);
+      }))
+
+      // Notify parent app cache engine silently in background
       activeEnrolled.forEach(item => onRemove(item.code))
       
       if (onRefreshSubmissions) {
         await onRefreshSubmissions(studentId)
       }
     } catch (e) {
-      setSubmitError(e.message) // This will no longer say "Failed to fetch"!
+      setSubmitError(e.message)
     } finally {
       setWithdrawLoading(false)
     }
@@ -284,18 +304,9 @@ export default function CartPage({
 
         {/* Diagnostic box visualizing localStorage fetch attributes */}
         <div style={{
-          background: '#fff3cd',
-          border: '1px solid #ffeeba',
-          color: '#856404',
-          padding: '6px 14px',
-          borderRadius: '6px',
-          fontSize: '12px',
-          fontFamily: 'monospace',
-          lineHeight: '1.4',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-          marginLeft: '20px'
+          background: '#fff3cd', border: '1px solid #ffeeba', color: '#856404',
+          padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontFamily: 'monospace',
+          lineHeight: '1.4', display: 'flex', flexDirection: 'column', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', marginLeft: '20px'
         }}>
           <div><strong>ID Value:</strong> {studentId === undefined ? 'undefined' : studentId === null ? 'null' : `"${studentId}"`}</div>
           <div><strong>ID Type:</strong> {typeof studentId}</div>
@@ -321,7 +332,7 @@ export default function CartPage({
             onClick={handleWithdraw}
             disabled={activeEnrolled.length === 0 || withdrawLoading}
             style={{ 
-              padding: '8px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: 13,
+              padding: '8px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: 13, color: '#fff',
               background: activeEnrolled.length === 0 ? '#e5e5e5' : '#7f1d1d',
               color: activeEnrolled.length === 0 ? '#aaa' : '#fff',
               cursor: activeEnrolled.length === 0 ? 'not-allowed' : 'pointer',
@@ -336,7 +347,7 @@ export default function CartPage({
       {/* ── Base Workspace Box ── */}
       <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden', background: '#fcfcfb' }}>
         
-        {cartItems.length === 0 ? (
+        {localCart.length === 0 ? (
           <div className={s.empty} style={{ width: '100%', textAlign: 'center', paddingTop: '100px' }}>
             Your advising cart is currently empty.<br />Return to look over your major requirements checklist.
           </div>
