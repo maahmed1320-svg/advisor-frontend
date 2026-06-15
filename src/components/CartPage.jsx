@@ -1,10 +1,6 @@
 import { useMemo, useState } from 'react'
 import s from './CartPage.module.css'
 
-const API_DOMAIN = import.meta.env.VITE_API_URL || "localhost:3001";
-const BASE = API_DOMAIN.startsWith("http") 
-  ? API_DOMAIN 
-  : `https://${API_DOMAIN}`;
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
 const START_H = 9
@@ -130,14 +126,9 @@ function ScheduleGrid({ blocks, conflicts }) {
 export default function CartPage({ 
   cartItems = [], 
   onRemove, 
-  onBack, 
-  studentId, 
-  submittedDbCodes = new Set(), 
-  onRefreshSubmissions 
+  onBack
 }) {
-  const [submitLoading,   setSubmitLoading]   = useState(false)
-  const [submitError,     setSubmitError]     = useState(null)
-  const [withdrawLoading, setWithdrawLoading] = useState(false)
+
   const [activeTab,       setActiveTab]       = useState(null) 
 
   const falItems = cartItems.filter(i => (i.section?.session ?? '').toUpperCase().includes('FAL'))
@@ -164,99 +155,6 @@ export default function CartPage({
   const activeTotalCr   = activeItems.reduce((acc, c) => acc + (c.credits ?? 0), 0)
   const maxCredits      = resolvedTab === 'SUM' ? 7 : 20
 
-  // 💡 NEW: Normalizes incoming db configurations into clean upper-case strings to guarantee matching
-  const normalizedSubmittedCodes = useMemo(() => {
-    const codeSet = new Set();
-    if (!submittedDbCodes) return codeSet;
-
-    const rawItems = submittedDbCodes instanceof Set 
-      ? Array.from(submittedDbCodes) 
-      : Array.isArray(submittedDbCodes) ? submittedDbCodes : [];
-
-    rawItems.forEach(item => {
-      if (!item) return;
-      if (typeof item === 'string') {
-        codeSet.add(item.trim().toUpperCase());
-      } else if (typeof item === 'object') {
-        const structuralCode = item.course_code || item.code || item.course_id;
-        if (structuralCode) {
-          codeSet.add(structuralCode.toString().trim().toUpperCase());
-        }
-      }
-    });
-    return codeSet;
-  }, [submittedDbCodes, submittedDbCodes?.size]);
-
-  // 💡 FIXED: Evaluates based on our sanitized string lookup sets
-  const isCurrentTabSubmitted = useMemo(() => {
-    if (!activeItems || activeItems.length === 0) return false;
-    return activeItems.every(item => {
-      const itemCodeClean = item.code?.trim().toUpperCase();
-      return normalizedSubmittedCodes.has(itemCodeClean);
-    });
-  }, [activeItems, normalizedSubmittedCodes])
-
-  const activeTabHasConflicts = activeConflicts.size > 0
-
-  async function handleSubmit() {
-    setSubmitLoading(true); setSubmitError(null)
-    try {
-      const res = await fetch(`${BASE}/api/student/${studentId}/enroll`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          courses: activeItems.map(item => ({
-            code: item.code, name: item.name, credits: item.credits,
-            class_nbr: item.section?.class_nbr, section: item.section?.section,
-            session: item.section?.session, campus: item.section?.campus,
-            room: item.section?.room, instructor: item.instructor,
-            mtg_start: item.section?.mtg_start, mtg_end: item.section?.mtg_end,
-          }))
-        }),
-      })
-      
-      const contentType = res.headers.get("content-type");
-      if (!res.ok) {
-        const errorMsg = (contentType && contentType.includes("application/json")) 
-          ? (await res.json()).error 
-          : "Submission failed: Server returned an error";
-        throw new Error(errorMsg);
-      }
-      
-      if (onRefreshSubmissions) {
-        await onRefreshSubmissions(studentId)
-      }
-    } catch (e) { setSubmitError(e.message) }
-    finally { setSubmitLoading(false) }
-  }
-
-  async function handleWithdraw() {
-    setWithdrawLoading(true); setSubmitError(null)
-    try {
-      const res = await fetch(`${BASE}/api/student/${studentId}/enroll`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ codes: activeItems.map(i => i.code) }),
-      })
-      
-      const contentType = res.headers.get("content-type");
-      if (!res.ok) {
-        const errorMsg = (contentType && contentType.includes("application/json")) 
-          ? (await res.json()).error 
-          : "Withdrawal failed: Server returned an error";
-        throw new Error(errorMsg);
-      }
-      
-      activeItems.forEach(item => onRemove(item.code))
-
-      if (onRefreshSubmissions) {
-        await onRefreshSubmissions(studentId)
-      }
-      setActiveTab(null)
-    } catch (e) { setSubmitError(e.message) }
-    finally { setWithdrawLoading(false) }
-  }
-
   const tabBase = {
     padding: '8px 24px', fontSize: 18, fontWeight: 600,
     border: 'none', cursor: 'pointer', borderRadius: '8px 8px 0 0',
@@ -281,32 +179,7 @@ export default function CartPage({
         </span>
         {hasConflicts && <span className={s.conflictPill}>⚠ Time conflict detected</span>}
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
-          {submitError && <span style={{ fontSize: 13, color: '#dc2626' }}>{submitError}</span>}
-
-          {!isCurrentTabSubmitted ? (
-            <button onClick={handleSubmit}
-              disabled={submitLoading || activeItems.length === 0 || activeTabHasConflicts}
-              style={{ padding: '8px 20px', borderRadius: 8, border: 'none', cursor: (activeItems.length === 0 || activeTabHasConflicts) ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, color: '#fff',
-                background: (activeItems.length === 0 || activeTabHasConflicts) ? '#ccc' : '#1a6a2a',
-                opacity: submitLoading ? 0.7 : 1 }}>
-              {submitLoading ? 'Submitting…' : '✓ Done — Submit Schedule'}
-            </button>
-          ) : (
-            <button disabled style={{ padding: '8px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: 13, color: '#fff', background: '#1a6a2a', opacity: 0.6, cursor: 'not-allowed' }}>
-              ✓ Submitted
-            </button>
-          )}
-
-          <button onClick={handleWithdraw} disabled={!isCurrentTabSubmitted || withdrawLoading}
-            style={{ padding: '8px 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: 13,
-              cursor: isCurrentTabSubmitted ? 'pointer' : 'not-allowed',
-              background: isCurrentTabSubmitted ? '#7f1d1d' : '#e5e5e5',
-              color: isCurrentTabSubmitted ? '#fff' : '#aaa',
-              opacity: withdrawLoading ? 0.7 : 1 }}>
-            {withdrawLoading ? 'Withdrawing…' : '✕ Withdraw & Clear'}
-          </button>
-        </div>
+        
       </div>
 
       {/* ── Base Workspace Box ── */}
@@ -326,11 +199,11 @@ export default function CartPage({
                 <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #ddd', marginBottom: '16px' }}>
                   <button style={{ ...tabBase, ...(resolvedTab === 'FAL' ? tabActive : tabInactive) }}
                     onClick={() => setActiveTab('FAL')}>
-                    🍂 Fall ({falItems.length})
+                     Fall ({falItems.length})
                   </button>
                   <button style={{ ...tabBase, ...(resolvedTab === 'SUM' ? tabActive : tabInactive) }}
                     onClick={() => setActiveTab('SUM')}>
-                    ☀️ Summer ({sumItems.length})
+                     Summer ({sumItems.length})
                   </button>
                 </div>
               )}
@@ -358,9 +231,6 @@ export default function CartPage({
                   if (sec?.Thurs) daysArr.push('Thurs')
                   if (sec?.Fri)   daysArr.push('Fri')
                   
-                  // 💡 FIXED: Remove button now checks against normalized uppercase strings
-                  const isItemSubmitted = normalizedSubmittedCodes.has(item.code?.trim().toUpperCase());
-
                   return (
                     <div key={item.code} className={`${s.item} ${isConflict ? s.itemConflict : ''}`} style={{ display: 'flex', width: '100%', border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                       <div style={{ width: '5px', flexShrink: 0, background: isConflict ? '#dc2626' : color.border }} />
@@ -371,9 +241,11 @@ export default function CartPage({
                             <span style={{ fontSize: '11px', background: '#f7fafc', border: '1px solid #e2e8f0', padding: '1px 5px', borderRadius: '4px', color: '#4a5568' }}>{item.credits} cr</span>
                             {isConflict && <span style={{ color: '#dc2626', fontSize: '11px', fontWeight: '700', background: '#fee2e2', padding: '1px 6px', borderRadius: '4px' }}>⚠ conflict</span>}
                           </div>
-                          {!isItemSubmitted && (
-                            <button className={s.removeBtn} onClick={() => onRemove(item.code)} style={{ color: '#e53e3e', background: 'none', border: '1px solid #fed7d7', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>Remove</button>
-                          )}
+                          
+                          {/* Just render the button cleanly without the old condition */}
+                          <button className={s.removeBtn} onClick={() => onRemove(item.code)} style={{ color: '#e53e3e', background: 'none', border: '1px solid #fed7d7', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                            Remove
+                          </button>
                         </div>
                         <div style={{ fontSize: '13px', fontWeight: '600', color: '#2d3748', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
                         {sec && (
