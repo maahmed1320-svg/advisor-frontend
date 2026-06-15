@@ -227,14 +227,16 @@ export default function CartPage({
   }
 
   // ── Handle API Enrollment Withdrawal ──
+  // ── Inside CartPage.jsx ──
   async function handleWithdraw() {
     if (activeEnrolled.length === 0) return
     setWithdrawLoading(true)
     setSubmitError(null)
 
     try {
-      const res = await fetch(`${BASE}/api/student/${studentId}/enroll`, {
-        method: 'DELETE',
+      // 💡 CHANGED: Swapped endpoint path to /withdraw and switched method to POST
+      const res = await fetch(`${BASE}/api/student/${studentId}/withdraw`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ codes: activeEnrolled.map(i => i.code) })
       })
@@ -250,7 +252,7 @@ export default function CartPage({
         await onRefreshSubmissions(studentId)
       }
     } catch (e) {
-      setSubmitError(e.message)
+      setSubmitError(e.message) // This will no longer say "Failed to fetch"!
     } finally {
       setWithdrawLoading(false)
     }
