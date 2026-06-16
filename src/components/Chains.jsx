@@ -16,7 +16,6 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
   const [completedSortKey, setCompletedSortKey] = useState("date") 
   const [isInverted, setIsInverted] = useState(false)
 
-  // ── Arrow drawing computation ──────────────────────────────
   useEffect(() => {
     if (!hoveredCode) { setArrows([]); return }
     const timer = setTimeout(() => {
@@ -160,7 +159,6 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
       locked:      'Locked — prerequisites not met',
     }
 
-    // Colors mapping used exclusively for text coloring in the component
     const textColorMap = { completed: '#155724', in_progress: '#856404', locked: '#6c757d' };
 
     return (
@@ -395,12 +393,12 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
             );
           })}
           {[
-            { color: '#28a745', label: 'Prerequisite courses' },
-            { color: '#0066cc', label: 'Unlocks these courses' },
-          ].map(({ color, label }) => (
-            <div key={label} className={s.legendItem}>
-              <div className={s.legendBorderBox} style={{ border: `3px solid ${color}` }} />
-              <div className={s.legendLabel}>{label}</div>
+            { color: '#28a745', label: 'Prerequisite courses', class: s.legendPrereqBorder },
+            { color: '#0066cc', label: 'Unlocks these courses', class: s.legendUnlockBorder },
+          ].map(item => (
+            <div key={item.label} className={s.legendItem}>
+              <div className={`${s.legendBorderBox} ${item.class}`} />
+              <div className={s.legendLabel}>{item.label}</div>
             </div>
           ))}
         </div>
@@ -518,12 +516,12 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
           </div>
         </div>
 
-        {/* ── COMPLETED COURSES TABLE (WITH CONTROL BAR) ── */}
+        {/* ── COMPLETED COURSES TABLE ── */}
         {completed?.length > 0 && (
           <div className={s.historySection}>
             <div className={s.historyHeadingTitle}>Student History : {processedCompleted.length} Completed Courses</div>
 
-            {/* Interactive Controls */}
+            {/* Controls */}
             <div className={s.historyControlsPanel}>
               <div className={s.historySearchWrapper}>
                 <input 

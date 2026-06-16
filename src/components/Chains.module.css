@@ -16,12 +16,12 @@
   overflow: visible;
 }
 
-/* Study Plan Matrix Grid Flow Layout */
+/* Main Flow Map Table Layout */
 .flowTable {
   border-collapse: collapse;
   width: 100%;
   table-layout: fixed;
-  min-width: 1200px; /* Crucial: Prevents code pills from squishing and piling on mobile viewports */
+  min-width: 1400px; /* Locks width on mobile to prevent squishing and overlapping */
 }
 
 .yearHeaderCell {
@@ -41,36 +41,37 @@
   padding: 10px 8px;
   background: #f5f5f5;
   border: 1px solid #ddd;
-  font-size: 18px;
+  font-size: 14px;
   color: #555;
 }
 
 .flowCell {
   vertical-align: top;
-  padding: 44px 8px;
+  padding: 30px 6px;
   border: 1px solid #eee;
-  min-width: 120px;
+  min-width: 110px;
   text-align: left;
 }
 
 .flowCellSummer {
   vertical-align: middle;
-  padding: 44px 8px;
+  padding: 30px 6px;
   border: 1px solid #eee;
-  min-width: 120px;
+  min-width: 110px;
   text-align: center;
 }
 
-/* Unified Course Pill Base Elements */
+/* Course Code Micro Pills */
 .coursePill {
   border-radius: 6px;
-  padding: 13px 10px;
-  margin: 25px 25px;
+  padding: 10px 6px;
+  margin: 16px 12px;
   text-align: center;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s, filter 0.2s, opacity 0.2s;
+  box-sizing: border-box;
 }
 
 .pillCompleted {
@@ -91,7 +92,7 @@
   color: #6c757d;
 }
 
-/* Hover Contextual Outlines */
+/* Hover State Connectors */
 .pillHovered {
   outline: 3px solid #333;
   outline-offset: 2px;
@@ -111,11 +112,11 @@
 }
 
 .pillDimmed {
-  filter: blur(2px);
+  filter: blur(1.5px);
   opacity: 0.35;
 }
 
-/* Fixed Tooltip Windows */
+/* Tooltip Window Node */
 .tooltipWindow {
   position: fixed;
   bottom: 32px;
@@ -136,8 +137,7 @@
 }
 
 .tooltipCode {
-  客观-font-weight: 600;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 15px;
   margin-bottom: 4px;
 }
@@ -150,19 +150,19 @@
 
 .tooltipState {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
-/* Footer Section Panels */
+/* Legend and Footers */
 .footerWrap {
-  margin-top: 24px;
-  padding: 16px;
-  border-top: 1px solid #eee;
+  margin-top: 32px;
+  padding: 16px 4px;
+  border-top: 1px solid #e2e8f0;
 }
 
 .legendGrid {
   display: flex;
-  gap: 24px;
+  gap: 20px;
   flex-wrap: wrap;
 }
 
@@ -173,8 +173,8 @@
 }
 
 .legendBox {
-  width: 32px;
-  height: 20px;
+  width: 28px;
+  height: 18px;
   border-radius: 4px;
   flex-shrink: 0;
 }
@@ -186,35 +186,43 @@
 
 .legendLabel {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: #333;
 }
 
 .legendSub {
   font-size: 11px;
-  color: #888;
+  color: #718096;
 }
 
 .legendBorderBox {
-  width: 32px;
-  height: 20px;
+  width: 28px;
+  height: 18px;
   border-radius: 4px;
   background: #fff;
   flex-shrink: 0;
 }
 
-/* Extra Courses Area Layout */
+.legendPrereqBorder {
+  border: 3px solid #28a745;
+}
+
+.legendUnlockBorder {
+  border: 3px solid #0066cc;
+}
+
+/* Extra Floating Category Lists */
 .extraSection {
-  margin-top: 20px;
-  border-top: 1px solid #eee;
+  margin-top: 24px;
+  border-top: 1px solid #edf2f7;
   padding-top: 16px;
 }
 
 .extraHeadingTitle {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 10px;
-  color: #555;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #4a5568;
 }
 
 .extraItemsRow {
@@ -227,14 +235,17 @@
   border-radius: 6px;
   padding: 6px 12px;
   font-size: 13px;
+  font-weight: 500;
 }
 
 .extraCategoryTag {
   font-size: 11px;
-  opacity: 0.7;
+  opacity: 0.75;
+  font-weight: 700;
+  margin-left: 2px;
 }
 
-/* Specialty Electives Layout Section Dashboard */
+/* Specialty Electives Matrix Table */
 .dashboardSection {
   margin-top: 48px;
   border-top: 3px solid #1a3a6a;
@@ -244,44 +255,45 @@
 .dashboardHeaderBox {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   margin-bottom: 20px;
 }
 
 .dashboardMainTitle {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   color: #1a3a6a;
-  letter-spacing: -0.3px;
 }
 
 .dashboardSubTitle {
-  font-size: 14px;
-  color: #4a5568;
+  font-size: 13px;
+  color: #718096;
   font-weight: 500;
 }
 
 .dashboardTableContainer {
   overflow-x: auto;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
   border-radius: 8px;
+  border: 1px solid #cbd5e0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .dashboardTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 15px;
+  font-size: 14px;
+  min-width: 900px; /* Keeps tables structured horizontally to allow smooth micro zoom scroll */
   background: #fff;
-  border: 1px solid #cbd5e0;
 }
 
 .dashboardTh {
-  padding: 16px 20px;
+  padding: 14px 16px;
   text-align: left;
   font-weight: 700;
   color: #2d3748;
-  fontSize: 15px;
   background: #edf2f7;
+  border-bottom: 2px solid #cbd5e0;
 }
 
 .dashboardTable tr {
@@ -292,14 +304,19 @@
   border-bottom: none;
 }
 
+.dashboardTable tr:nth-child(even) {
+  background: #f7fafc;
+}
+
 .dashboardTd {
-  padding: 16px 20px;
+  padding: 14px 16px;
+  color: #2d3748;
 }
 
 .dashboardTdTrackTag {
-  font-size: 13px; 
+  font-size: 11px; 
   font-weight: 700; 
-  padding: 6px 14px; 
+  padding: 4px 10px; 
   border-radius: 20px; 
   display: inline-block;
   text-transform: uppercase;
@@ -307,291 +324,248 @@
 }
 
 .dashboardTdCode {
-  font-weight: 800; 
+  font-weight: 700; 
   color: #1a3a6a; 
-  font-family: monospace; 
-  font-size: 16px;
+  font-family: monospace;
 }
 
 .dashboardTdTitle {
-  color: #2d3748; 
-  font-weight: 600; 
-  font-size: 15px;
+  font-weight: 500;
 }
 
 .dashboardPrereqTokenContainer {
   display: flex; 
   flex-wrap: wrap; 
-  gap: 6px;
+  gap: 4px;
 }
 
 .dashboardPrereqEmptyText {
   color: #a0aec0; 
-  font-style: italic; 
-  font-size: 14px;
+  font-style: italic;
 }
 
 .dashboardPrereqToken {
-  font-size: 12px; 
-  padding: 4px 10px; 
+  font-size: 11px; 
+  padding: 2px 8px; 
   border-radius: 4px; 
   font-family: monospace;
   font-weight: 700;
 }
 
 .dashboardStatusBadge {
-  font-size: 13px; 
+  font-size: 12px; 
   font-weight: 700; 
-  padding: 4px 12px; 
+  padding: 4px 10px; 
   border-radius: 12px;
+  display: inline-block;
 }
 
 .dashboardEnrollmentStatusText {
-  font-size: 13px; 
+  font-size: 12px; 
   font-weight: 800; 
-  padding: 6px 14px; 
+  padding: 4px 12px; 
   border-radius: 4px; 
   display: inline-block; 
-  width: 100px; 
+  width: 95px; 
   text-align: center;
 }
 
-/* Student Completed Course Layout Controls */
+/* History Logs Container */
 .historySection {
-  margin-top: 48px; 
-  border-top: 2px solid #cbd5e0; 
+  margin-top: 48px;
+  border-top: 2px solid #cbd5e0;
   padding-top: 24px;
 }
 
 .historyHeadingTitle {
-  font-size: 20px; 
-  font-weight: 700; 
-  margin-bottom: 16px; 
+  font-size: 18px;
+  font-weight: 700;
   color: #2d3748;
+  margin-bottom: 16px;
 }
 
 .historyControlsPanel {
-  display: flex; 
-  gap: 16px; 
-  margin-bottom: 20px; 
-  flex-wrap: wrap; 
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
   align-items: center;
 }
 
 .historySearchWrapper {
-  flex: 1; 
-  min-width: 260px;
+  flex: 1;
+  min-width: 240px;
 }
 
 .historySearchField {
-  width: 100%; 
-  padding: 10px 14px; 
-  border-radius: 6px; 
-  border: 1px solid #cbd5e0; 
-  font-size: 14px; 
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e0;
+  font-size: 14px;
   outline: none;
   box-sizing: border-box;
 }
 
 .historySelectField {
-  padding: 10px 14px; 
-  border-radius: 6px; 
-  border: 1px solid #cbd5e0; 
-  font-size: 14px; 
-  background: #fff; 
-  font-weight: 600; 
-  color: #4a5568; 
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e0;
+  font-size: 14px;
+  background: #fff;
+  font-weight: 600;
+  color: #4a5568;
   cursor: pointer;
 }
 
 .historyLabelCheckbox {
-  display: flex; 
-  align-items: center; 
-  gap: 8px; 
-  font-size: 14px; 
-  font-weight: 600; 
-  color: #4a5568; 
-  cursor: pointer; 
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a5568;
+  cursor: pointer;
   user-select: none;
 }
 
 .historyCheckboxInput {
-  width: 17px; 
-  height: 17px; 
+  width: 16px;
+  height: 16px;
   cursor: pointer;
 }
 
 .historyTableContainer {
-  overflow-x: auto; 
+  overflow-x: auto;
   box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .historyTable {
-  width: 100%; 
-  border-collapse: collapse; 
-  font-size: 15px; 
-  border: 1px solid #cbd5e0;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 900px;
 }
 
 .historyTh {
-  padding: 14px 18px; 
-  text-align: left; 
-  border: 1px solid #cbd5e0; 
-  font-weight: 700; 
-  color: #4a5568; 
-  font-size: 15px;
+  padding: 12px 14px;
+  text-align: left;
+  font-weight: 700;
+  color: #4a5568;
   background: #edf2f7;
+  border-bottom: 2px solid #cbd5e0;
 }
 
 .historyTable tr {
   border-bottom: 1px solid #e2e8f0;
 }
 
+.historyTable tr:nth-child(even) {
+  background: #f7fafc;
+}
+
 .historyTd {
-  padding: 14px 18px; 
-  border: 1px solid #e2e8f0;
+  padding: 12px 14px;
 }
 
 .historyTdCode {
-  font-weight: 700; 
-  color: #1a3a6a; 
-  font-family: monospace; 
-  font-size: 15px;
+  font-weight: 700;
+  color: #1a3a6a;
+  font-family: monospace;
 }
 
 .historyTdName {
-  color: #2d3748; 
+  color: #2d3748;
   font-weight: 500;
 }
 
 .historyTdCredits {
-  text-align: center; 
+  text-align: center;
   font-weight: 600;
 }
 
 .historyTdGrade {
-  text-align: center; 
-  font-weight: 800; 
-  color: #2f855a; 
-  font-size: 16px;
+  text-align: center;
+  font-weight: 800;
+  color: #2f855a;
 }
 
 .historyTdTerm {
-  color: #4a5568; 
-  font-weight: 500;
+  color: #4a5568;
 }
 
 .historyTdCategory {
-  color: #2b6cb0; 
-  font-weight: 600; 
+  color: #2b6cb0;
+  font-weight: 600;
   font-family: monospace;
 }
 
 .historyEmptyMessageCell {
-  padding: 24px; 
-  text-align: center; 
-  color: #a0aec0; 
+  padding: 24px;
+  text-align: center;
+  color: #a0aec0;
   font-style: italic;
 }
 
 .debugPre {
-  font-size: 10px; 
-  background: #ffe; 
-  padding: 8px; 
-  margin-bottom: 8px; 
+  font-size: 10px;
+  background: #ffe;
+  padding: 8px;
   margin-top: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
 }
 
 /* ────────────────────────────────────────────────────────
-   PHONE VIEWPORT RESPONSIVE LAYER OVERRIDES (<= 768px Screens)
+   PHONE MINI SCALING RULES (<= 768px Screens)
    ──────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  /* Restructure Specialty Dashboard list */
-  .dashboardTable, .dashboardTable thead, .dashboardTable tbody, .dashboardTable tr, .dashboardTable td {
-    display: block;
-    width: 100%;
-    box-sizing: border-box;
+  .yearHeaderCell {
+    font-size: 14px;
+    padding: 10px 4px 14px;
   }
   
-  .dashboardTable thead {
-    display: none;
-  }
-  
-  .dashboardTable tr {
-    margin: 12px;
-    border: 1px solid #cbd5e0 !important;
-    border-radius: 8px;
-    padding: 12px;
-    background: #fff;
-  }
-  
-  .dashboardTd {
-    padding: 6px 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .dashboardTd::before {
+  .semesterHeaderCell {
     font-size: 11px;
-    text-transform: uppercase;
-    color: #718096;
-    font-weight: 700;
-    margin-bottom: 2px;
+    padding: 6px 4px;
   }
 
-  .dashboardTable tr td:nth-child(1)::before { content: "Specialty Track:"; }
-  .dashboardTable tr td:nth-child(2)::before { content: "Course Code:"; }
-  .dashboardTable tr td:nth-child(3)::before { content: "Course Title:"; }
-  .dashboardTable tr td:nth-child(4)::before { content: "Prerequisites:"; }
-  .dashboardTable tr td:nth-child(5)::before { content: "Prereqs Status:"; }
-  .dashboardTable tr td:nth-child(6)::before { content: "Enrollment Status:"; }
+  .flowCell, .flowCellSummer {
+    padding: 16px 2px;
+  }
 
-  /* Restructure Student Course History list */
-  .historyTable, .historyTable thead, .historyTable tbody, .historyTable tr, .historyTable td {
-    display: block;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  
-  .historyTable thead {
-    display: none;
-  }
-  
-  .historyTable tr {
-    margin: 12px;
-    border: 1px solid #cbd5e0 !important;
-    border-radius: 8px;
-    padding: 12px;
-    background: #fff;
-  }
-  
-  .historyTd {
-    padding: 6px 0;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  
-  .historyTd::before {
+  .coursePill {
     font-size: 11px;
-    text-transform: uppercase;
-    color: #718096;
-    font-weight: 700;
-    margin-right: 8px;
-    flex-shrink: 0;
+    padding: 6px 2px;
+    margin: 8px 4px;
+    border-radius: 4px;
   }
 
-  .historyTable tr td:nth-child(1)::before { content: "Course Code:"; }
-  .historyTable tr td:nth-child(2)::before { content: "Course Title:"; }
-  .historyTable tr td:nth-child(3)::before { content: "Credits:"; }
-  .historyTable tr td:nth-child(4)::before { content: "Final Grade:"; }
-  .historyTable tr td:nth-child(5)::before { content: "Academic Term:"; }
-  .historyTable tr td:nth-child(6)::before { content: "Enrollment Date:"; }
-  .historyTable tr td:nth-child(7)::before { content: "Category Key:"; }
+  .footerWrap {
+    padding: 12px 4px;
+  }
 
-  .historyTdCredits, .historyTdGrade {
-    text-align: right;
+  .legendLabel {
+    font-size: 11px;
+  }
+
+  .dashboardMainTitle {
+    font-size: 16px;
+  }
+
+  .historyHeadingTitle {
+    font-size: 15px;
+  }
+
+  .dashboardTable, .historyTable {
+    font-size: 12px;
+  }
+
+  .dashboardTdTrackTag {
+    font-size: 9px;
+    padding: 2px 6px;
   }
 }
