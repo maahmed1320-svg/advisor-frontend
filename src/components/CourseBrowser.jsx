@@ -72,6 +72,7 @@ export default function CourseBrowser({
       return {
         ...course,
         prereqsMet: liveData ? liveData.prereqsMet : course.prereqsMet,
+        missingPrereqs: liveData ? liveData.missingPrereqs : [],
         sections: course.sections ? course.sections.map(s => ({ ...s })) : []
       }
     })
@@ -218,13 +219,8 @@ export default function CourseBrowser({
           const isOpen            = expanded[r.code] || false
           const displayGroups     = r.displayGroups || []
           
-          // Match and identify verified database sync rows from global props
           const cartItemForCourse = (cart || []).find(c => c.code === r.code)
-          const isRecordFromDb    = !!cartItemForCourse?.fromDb
-
-          // Auto-default selection pointer to the verified class registration ID
           const currentSelection  = selected[r.code] ?? cartItemForCourse?.section?.class_nbr
-
           const displayCredits    = r.credits ?? displayGroups[0]?.primary?.max_units ?? 0
 
           // ── Co-requisite Parent-Child Tracking Engine ──────────────────
@@ -236,8 +232,17 @@ export default function CourseBrowser({
           const missingParentCoReq = !!parentCode && !isAlreadySubmitted && !inCart && !isParentInCart;
 
           const nativePrereqsMet   = filter === 'allful' ? true : r.prereqsMet !== false
-          // Strictly block child co-req matching lines until parent lecture gets selected
-          const hasPrereqsMet     = missingParentCoReq ? false : nativePrereqsMet;
+          
+          // 💡 FIXED REAL-TIME EVALUATION: If the parent lecture is in the cart, ignore the strict backend prerequisite flag
+          let hasPrereqsMet = nativePrereqsMet;
+          if (isParentInCart) {
+            const otherMissing = (r.missingPrereqs || []).filter(p => p !== parentCode && !p.startsWith('Required:'));
+            if (otherMissing.length === 0) {
+              hasPrereqsMet = true; // Unlocks the +Add button instantly!
+            }
+          } else if (missingParentCoReq) {
+            hasPrereqsMet = false;
+          }
 
           const courseCredits     = r.credits ?? displayGroups[0]?.primary?.max_units ?? 0
           const isLimitExceeded   = !inCart && (totalCartCredits + courseCredits > 20)
@@ -305,7 +310,6 @@ export default function CourseBrowser({
 
                   <span className={s.cr}>{displayCredits} cr</span>
 
-                  {/* Drop out button panel entirely for confirmed records */}
                   {!blocked && !isAlreadySubmitted && (
                     <button
                       className={`${s.addBtn}
@@ -318,7 +322,6 @@ export default function CourseBrowser({
                         if (isLimitExceeded  && !inCart) return
                         
                         if (inCart) {
-                          // Cascading deletion configuration: If it's a parent course, remove its children co-reqs too
                           const pairsAsParent = COREQS.filter(([a, b]) => a === r.code);
                           pairsAsParent.forEach(([a, b]) => {
                             if ((cart || []).some(c => c.code === b)) {
@@ -331,7 +334,6 @@ export default function CourseBrowser({
                               onToggleCart(b, childSectionToInject);
                             }
                           });
-                          // Finally remove the parent item out of the cart array list
                           handleAdd(r);
                         } else {
                           handleAdd(r);
@@ -377,7 +379,6 @@ export default function CourseBrowser({
                           background:   isAlreadySubmitted
                             ? (isSelected ? '#e9d5ff' : '#f3e8ff')
                             : (isSelected ? '#f7fafc'  : '#fff'),
-                          // Lock clicks and disable cursor options on database items
                           cursor:        isAlreadySubmitted ? 'not-allowed' : 'pointer',
                           opacity:       isAlreadySubmitted ? 0.75 : 1,
                           pointerEvents: isAlreadySubmitted ? 'none' : 'auto',
