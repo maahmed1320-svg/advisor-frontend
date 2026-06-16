@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { STUDY_PLAN } from './Studyplans'
+import s from './Chains.module.css'
 
 export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, completed, inProgress }) {
 
@@ -11,12 +12,11 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
   const pillRefs     = useRef({})
   const containerRef = useRef(null)
 
-  // ── New State for Search, Filter, and Sort Control ───────
   const [completedSearch, setCompletedSearch] = useState("")
-  const [completedSortKey, setCompletedSortKey] = useState("date") // date, code, name, credits, grade
+  const [completedSortKey, setCompletedSortKey] = useState("date") 
   const [isInverted, setIsInverted] = useState(false)
 
-  // ── Arrow drawing ─────────────────────────────────────────
+  // ── Arrow drawing computation ──────────────────────────────
   useEffect(() => {
     if (!hoveredCode) { setArrows([]); return }
     const timer = setTimeout(() => {
@@ -69,18 +69,10 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
       setArrows(newArrows)
     }, 10)
     return () => clearTimeout(timer)
-  }, [hoveredCode])
+  }, [hoveredCode, prereqEdges])
 
-  // ── Course data map ───────────────────────────────────────
   const chainMap = {}
   for (const c of chains) chainMap[c.code] = c
-
-  // ── Styles ────────────────────────────────────────────────
-  const STATE_STYLE = {
-    completed:   { background: '#d4edda', border: '1px solid #28a745', color: '#155724' },
-    in_progress: { background: '#fff3cd', border: '1px solid #856404', color: '#856404' },
-    locked:      { background: '#e2e3e5', border: '1px solid #6c757d', color: '#6c757d' },
-  }
 
   const LEGEND = [
     { state: 'completed',   label: 'Completed',   extra: 'Course passed' },
@@ -88,7 +80,6 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
     { state: 'locked',      label: 'For the future',      extra: 'Available/Locked' },
   ]
 
-  // ── OE / ME from completed and inProgress lists ───────────
   const allOE = [
     ...(inProgress || []).filter(c => c.type2 === 'OE'),
     ...(completed  || []).filter(c => c.type2 === 'OE'),
@@ -121,7 +112,6 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
 
   const allPlanCodes = new Set()
 
-  // ── Recursive prereqs ─────────────────────────────────────
   function getAllPrereqs(code, visited = new Set()) {
     const directPrereqs = prereqEdges?.[code] || []
     for (const p of directPrereqs) {
@@ -133,7 +123,6 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
     return visited
   }
 
-  // ── Hover handlers ────────────────────────────────────────
   const handleEnter = (code) => {
     setHoveredCode(code)
     setTooltip(code)
@@ -154,14 +143,6 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
     setUnlockNodes(new Set())
   }
 
-  // ── Pill overlay ──────────────────────────────────────────
-  const getPillOverlay = (code) => {
-    if (hoveredCode === code)  return { outline: '3px solid #333',    outlineOffset: 2 }
-    if (prereqNodes.has(code)) return { outline: '3px solid #28a745', outlineOffset: 2 }
-    if (unlockNodes.has(code)) return { outline: '3px solid #0066cc', outlineOffset: 2 }
-    return {}
-  }
-
   const renderTooltip = () => {
     if (!tooltip) return null
     
@@ -171,7 +152,7 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
       || { code: tooltip, state: 'locked' }
 
     const state = display.state 
-      ?? (display.grade ? 'completed' : 'in_progress')
+      || (display.grade ? 'completed' : 'in_progress')
 
     const stateLabel = {
       completed:   display.grade ? `Grade: ${display.grade}` : 'Completed',
@@ -179,31 +160,24 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
       locked:      'Locked — prerequisites not met',
     }
 
+    // Colors mapping used exclusively for text coloring in the component
+    const textColorMap = { completed: '#155724', in_progress: '#856404', locked: '#6c757d' };
+
     return (
-      <div style={{
-        position: 'fixed', bottom: 32, left: '50%',
-        transform: 'translateX(-50%)',
-        background: '#fff', border: '1px solid #ddd',
-        borderRadius: 10, padding: '10px 20px', fontSize: 13,
-        boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-        zIndex: 9999, pointerEvents: 'none',
-        minWidth: 160, maxWidth: 260,
-        textAlign: 'center', lineHeight: 1.6,
-      }}>
-        <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{display.code}</div>
+      <div className={s.tooltipWindow}>
+        <div className={s.tooltipCode}>{display.code}</div>
         {(display.title || display.name) && (
-          <div style={{ color: '#444', fontSize: 12, marginBottom: 4 }}>
+          <div className={s.tooltipTitle}>
             {display.title || display.name}
           </div>
         )}
-        <div style={{ fontSize: 12, fontWeight: 500, color: STATE_STYLE[state]?.color || '#6c757d' }}>
+        <div className={s.tooltipState} style={{ color: textColorMap[state] || '#6c757d' }}>
           {stateLabel[state] || state}
         </div>
       </div>
     )
   }
 
-  // ── Study plan ────────────────────────────────────────────
   const plan = STUDY_PLAN["CME"]
   const course_year_map = {
     11: '1F', 12: '1S',
@@ -230,7 +204,6 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
     { label: 'Senior',    span: 2 },
   ]
 
-  // Major Elective List
   const MejorElectiveList = [
     { code: "CME460", name: "Natural Gas Processing", theme: { label: "Gas Processing & Petrochemicals", bg: "#e0f2fe", txt: "#0369a1", bdr: "#bae6fd" } },
     { code: "CME461", name: "Petroleum Refining Process", theme: { label: "Gas Processing & Petrochemicals", bg: "#e0f2fe", txt: "#0369a1", bdr: "#bae6fd" } },
@@ -277,7 +250,6 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
     c.state === 'completed'
   )
 
-  // ── Filter & Sort Logic Computation for Completed Courses ──
   const termOrder = { fall: 1, win: 2, spr: 3, sum: 4 };
   
   const processedCompleted = [...(completed || [])]
@@ -317,13 +289,9 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
     });
 
   return (
-    <div ref={containerRef} style={{ overflowX: 'auto', padding: '1rem', position: 'relative' }}>
+    <div ref={containerRef} className={s.canvasContainer}>
 
-      <svg style={{
-        position: 'absolute', top: 0, left: 0,
-        width: '100%', height: '100%',
-        pointerEvents: 'none', zIndex: 10, overflow: 'visible',
-      }}>
+      <svg className={s.arrowSvg}>
         <defs>
           {['#28a745', '#0066cc'].map(color => (
             <marker key={color} id={`arrow-${color.replace('#','')}`}
@@ -342,27 +310,22 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
       {renderTooltip()}
 
       {/* Main Flow Table Canvas Layout */}
-      <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}>
+      <table className={s.flowTable}>
         <thead>
           <tr>
             {year.map((value, i) => (
-              <th key={value.label} colSpan={value.span} style={{
-                textAlign: 'center', padding: '16px 4px 24px',
-                borderBottom: '2px solid #ccc',
-                borderRight: i < year.length - 1 ? '2px solid #ccc' : 'none',
-                fontSize: 18, fontWeight: 600,
-              }}>
+              <th 
+                key={value.label} 
+                colSpan={value.span} 
+                className={`${s.yearHeaderCell} ${i < year.length - 1 ? s.yearHeaderCellBorder : ''}`}
+              >
                 {value.label.toUpperCase()}
               </th>
             ))}
           </tr>
           <tr>
             {SEMESTERS.map(value => (
-              <th key={value.key} style={{
-                textAlign: 'center', padding: '10px 8px',
-                background: '#f5f5f5', border: '1px solid #ddd',
-                fontSize: 18, color: '#555',
-              }}>
+              <th key={value.key} className={s.semesterHeaderCell}>
                 {value.sem.toUpperCase()}
               </th>
             ))}
@@ -370,116 +333,124 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
         </thead>
         <tbody>
           <tr>
-            {SEMESTERS.map(value => (
-              <td key={value.key} style={{
-                verticalAlign: value.key === '2Sum' || value.key === '3Sum' ? 'middle' : 'top',
-                padding: '44px 8px', border: '1px solid #eee', minWidth: 120,
-                textAlign: value.key === '2Sum' || value.key === '3Sum' ? 'center' : 'left',
-              }}>
-                {(NewPlanFormat[value.key] || []).map((c, i) => {
-                  const display     = getDisplayForCode(c)
-                  const isHovered   = hoveredCode === display.code
-                  const isPrereq    = prereqNodes.has(display.code)
-                  const isUnlock    = unlockNodes.has(display.code)
-                  const isAnyActive = isHovered || isPrereq || isUnlock
+            {SEMESTERS.map(value => {
+              const isSummerCell = value.key === '2Sum' || value.key === '3Sum';
+              return (
+                <td 
+                  key={value.key} 
+                  className={isSummerCell ? s.flowCellSummer : s.flowCell}
+                >
+                  {(NewPlanFormat[value.key] || []).map((c, i) => {
+                    const display     = getDisplayForCode(c)
+                    const isHovered   = hoveredCode === display.code
+                    const isPrereq    = prereqNodes.has(display.code)
+                    const isUnlock    = unlockNodes.has(display.code)
+                    const isAnyActive = isHovered || isPrereq || isUnlock
 
-                  return (
-                    <div
-                      key={c + i}
-                      ref={el => pillRefs.current[display.code] = el}
-                      onMouseEnter={() => handleEnter(display.code)}
-                      onMouseLeave={handleLeave}
-                      style={{
-                        ...(STATE_STYLE[display.state] || STATE_STYLE.locked),
-                        ...getPillOverlay(display.code),
-                        borderRadius: 6, padding: '13px 10px',
-                        margin: '25px 25px', textAlign: 'center',
-                        fontSize: 16, fontWeight: 500,
-                        cursor: 'pointer', transition: '0.2s',
-                        filter:    hoveredCode && !isAnyActive ? 'blur(2px)' : 'none',
-                        opacity:   hoveredCode && !isAnyActive ? 0.35 : 1,
-                        transform: isHovered ? 'scale(1.05)' : isAnyActive ? 'scale(1.02)' : 'scale(1)',
-                      }}
-                    >
-                      {display.code}
-                    </div>
-                  )
-                })}
-              </td>
-            ))}
+                    const stateClassMap = { completed: s.pillCompleted, in_progress: s.pillInProgress, locked: s.pillLocked };
+                    const activeStateClass = stateClassMap[display.state] || s.pillLocked;
+
+                    const pillClasses = [
+                      s.coursePill,
+                      activeStateClass,
+                      isHovered ? s.pillHovered : '',
+                      isPrereq ? s.pillPrereq : '',
+                      isUnlock ? s.pillUnlock : '',
+                      hoveredCode && !isAnyActive ? s.pillDimmed : ''
+                    ].filter(Boolean).join(' ');
+
+                    return (
+                      <div
+                        key={c + i}
+                        ref={el => pillRefs.current[display.code] = el}
+                        onMouseEnter={() => handleEnter(display.code)}
+                        onMouseLeave={handleLeave}
+                        className={pillClasses}
+                      >
+                        {display.code}
+                      </div>
+                    )
+                  })}
+                </td>
+              );
+            })}
           </tr>
         </tbody>
       </table>
 
-      <footer style={{ marginTop: 24, padding: '16px', borderTop: '1px solid #eee' }}>
+      <div className={s.footerWrap}>
 
         {/* Legend */}
-        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-          {LEGEND.map(({ state, label, extra }) => (
-            <div key={state} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ ...STATE_STYLE[state], width: 32, height: 20, borderRadius: 4, flexShrink: 0 }} />
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: '#333' }}>{label}</div>
-                <div style={{ fontSize: 11, color: '#888' }}>{extra}</div>
+        <div className={s.legendGrid}>
+          {LEGEND.map(({ state, label, extra }) => {
+            const legendBoxClassMap = { completed: s.pillCompleted, in_progress: s.pillInProgress, locked: s.pillLocked };
+            return (
+              <div key={state} className={s.legendItem}>
+                <div className={`${s.legendBox} ${legendBoxClassMap[state] || s.pillLocked}`} />
+                <div className={s.legendTextGroup}>
+                  <div className={s.legendLabel}>{label}</div>
+                  <div className={s.legendSub}>{extra}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {[
             { color: '#28a745', label: 'Prerequisite courses' },
             { color: '#0066cc', label: 'Unlocks these courses' },
           ].map(({ color, label }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 32, height: 20, borderRadius: 4, border: `3px solid ${color}`, background: '#fff' }} />
-              <div style={{ fontSize: 13, fontWeight: 500, color: '#333' }}>{label}</div>
+            <div key={label} className={s.legendItem}>
+              <div className={s.legendBorderBox} style={{ border: `3px solid ${color}` }} />
+              <div className={s.legendLabel}>{label}</div>
             </div>
           ))}
         </div>
 
         {/* Extra courses */}
         {[...extraOE, ...extraME, ...extraOther].length > 0 && (
-          <div style={{ marginTop: 20, borderTop: '1px solid #eee', paddingTop: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, color: '#555' }}>
-              Extra Courses
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {extraOE.map(c => (
-                <div key={c.code} style={{ ...(STATE_STYLE[c.grade ? 'completed' : 'in_progress'] || STATE_STYLE.locked), borderRadius: 6, padding: '6px 12px', fontSize: 13 }}>
-                  {c.code} <span style={{ fontSize: 11, opacity: 0.7 }}>OE</span>
-                </div>
-              ))}
-              {extraME.map(c => (
-                <div key={c.code} style={{ ...(STATE_STYLE[c.grade ? 'completed' : 'in_progress'] || STATE_STYLE.locked), borderRadius: 6, padding: '6px 12px', fontSize: 13 }}>
-                  {c.code} <span style={{ fontSize: 11, opacity: 0.7 }}>ME</span>
-                </div>
-              ))}
-              {extraOther.map(c => (
-                <div key={c.code} style={{ ...(STATE_STYLE[c.state] || STATE_STYLE.locked), borderRadius: 6, padding: '6px 12px', fontSize: 13 }}>
-                  {c.code}
-                </div>
-              ))}
+          <div className={s.extraSection}>
+            <div className={s.extraHeadingTitle}>Extra Courses</div>
+            <div className={s.extraItemsRow}>
+              {extraOE.map(c => {
+                const stateClass = c.grade ? s.pillCompleted : s.pillInProgress;
+                return (
+                  <div key={c.code} className={`${s.extraItemCard} ${stateClass}`}>
+                    {c.code} <span className={s.extraCategoryTag}>OE</span>
+                  </div>
+                );
+              })}
+              {extraME.map(c => {
+                const stateClass = c.grade ? s.pillCompleted : s.pillInProgress;
+                return (
+                  <div key={c.code} className={`${s.extraItemCard} ${stateClass}`}>
+                    {c.code} <span className={s.extraCategoryTag}>ME</span>
+                  </div>
+                );
+              })}
+              {extraOther.map(c => {
+                const stateClassMap = { completed: s.pillCompleted, in_progress: s.pillInProgress, locked: s.pillLocked };
+                return (
+                  <div key={c.code} className={`${s.extraItemCard} ${stateClassMap[c.state] || s.pillLocked}`}>
+                    {c.code}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
         {/* ── MAJOR ELECTIVES CHECKER TABLE ── */}
-        <div style={{ marginTop: 48, borderTop: '3px solid #1a3a6a', paddingTop: 24 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: 20 }}>
-            <span style={{ fontSize: 22, fontWeight: 800, color: '#1a3a6a', letterSpacing: '-0.3px' }}>
-              🔬 Major Track Electives Specialty Dashboard
-            </span>
-            <span style={{ fontSize: 14, color: '#4a5568', fontWeight: '500' }}>
-              Verify required prerequisite pathways and trace specific chemical engine track milestone eligibility parameters.
-            </span>
+        <div className={s.dashboardSection}>
+          <div className={s.dashboardHeaderBox}>
+            <span className={s.dashboardMainTitle}>Major Track Electives Specialty Dashboard</span>
+            <span className={s.dashboardSubTitle}>Verify required prerequisite pathways and trace specific chemical engine track milestone eligibility parameters.</span>
           </div>
 
-          <div style={{ overflowX: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', borderRadius: '8px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15, minWidth: 1000, background: '#fff', border: '1px solid #cbd5e0' }}>
+          <div className={s.dashboardTableContainer}>
+            <table className={s.dashboardTable}>
               <thead>
-                <tr style={{ background: '#edf2f7', borderBottom: '3px solid #cbd5e0' }}>
+                <tr>
                   {['Specialty Track', 'Course Code', 'Course Title', 'Prerequisites Requirement Path', 'Prereqs Status', 'Enrollment Status'].map(h => (
-                    <th key={h} style={{ padding: '16px 20px', textAlign: 'left', fontWeight: 700, color: '#2d3748', fontSize: 15 }}>
-                      {h}
-                    </th>
+                    <th key={h} className={s.dashboardTh}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -491,45 +462,25 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
                   const isInProgress = inProgressSet.has(course.code);
 
                   return (
-                    <tr key={course.code + idx} style={{ background: idx % 2 === 0 ? '#fff' : '#f7fafc', borderBottom: '1px solid #e2e8f0', transition: 'background 0.15s' }}>
-                      <td style={{ padding: '16px 20px', verticalAlign: 'middle' }}>
-                        <span style={{ 
-                          fontSize: '13px', 
-                          fontWeight: '700', 
-                          padding: '6px 14px', 
-                          borderRadius: '20px', 
-                          background: course.theme.bg, 
-                          color: course.theme.txt,
-                          border: `1px solid ${course.theme.bdr}`,
-                          display: 'inline-block',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.3px'
-                        }}>
+                    <tr key={course.code + idx}>
+                      <td className={s.dashboardTd}>
+                        <span className={s.dashboardTdTrackTag} style={{ background: course.theme.bg, color: course.theme.txt, border: `1px solid ${course.theme.bdr}` }}>
                           {course.theme.label}
                         </span>
                       </td>
 
-                      <td style={{ padding: '16px 20px', fontWeight: 800, color: '#1a3a6a', fontFamily: 'monospace', fontSize: '16px' }}>{course.code}</td>
-                      <td style={{ padding: '16px 20px', color: '#2d3748', fontWeight: 600, fontSize: '15px' }}>{course.name}</td>
+                      <td className={`${s.dashboardTd} ${s.dashboardTdCode}`}>{course.code}</td>
+                      <td className={`${s.dashboardTd} ${s.dashboardTdTitle}`}>{course.name}</td>
                       
-                      <td style={{ padding: '16px 20px' }}>
+                      <td className={s.dashboardTd}>
                         {directPrereqs.length === 0 ? (
-                          <span style={{ color: '#a0aec0', fontStyle: 'italic', fontSize: '14px' }}>None</span>
+                          <span className={s.dashboardPrereqEmptyText}>None</span>
                         ) : (
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          <div className={s.dashboardPrereqTokenContainer}>
                             {directPrereqs.map(p => {
                               const passed = completedSet.has(p);
                               return (
-                                <span key={p} style={{ 
-                                  fontSize: '12px', 
-                                  padding: '4px 10px', 
-                                  borderRadius: '4px', 
-                                  fontFamily: 'monospace',
-                                  fontWeight: '700',
-                                  background: passed ? '#d4edda' : '#f8d7da',
-                                  color: passed ? '#155724' : '#721c24',
-                                  border: passed ? '1px solid #c3e6cb' : '1px solid #f5c6cb',
-                                }}>
+                                <span key={p} className={s.dashboardPrereqToken} style={{ background: passed ? '#d4edda' : '#f8d7da', color: passed ? '#155724' : '#721c24', border: passed ? '1px solid #c3e6cb' : '1px solid #f5c6cb' }}>
                                   {p}
                                 </span>
                               );
@@ -538,25 +489,25 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
                         )}
                       </td>
                       
-                      <td style={{ padding: '16px 20px' }}>
+                      <td className={s.dashboardTd}>
                         {directPrereqs.length === 0 ? (
-                          <span style={{ fontSize: '13px', fontWeight: 700, color: '#319795', background: '#e6fffa', padding: '4px 12px', borderRadius: '12px' }}>No Prereqs</span>
+                          <span className={s.dashboardStatusBadge} style={{ color: '#319795', background: '#e6fffa' }}>No Prereqs</span>
                         ) : holdsPrereqs ? (
-                          <span style={{ fontSize: '13px', fontWeight: 700, color: '#155724', background: '#d4edda', padding: '4px 12px', borderRadius: '12px', border: '1px solid #c3e6cb' }}>Ready</span>
+                          <span className={s.dashboardStatusBadge} style={{ color: '#155724', background: '#d4edda', border: '1px solid #c3e6cb' }}>Ready</span>
                         ) : (
-                          <span style={{ fontSize: '13px', fontWeight: 700, color: '#721c24', background: '#f8d7da', padding: '4px 12px', borderRadius: '12px', border: '1px solid #f5c6cb' }}>Locked</span>
+                          <span className={s.dashboardStatusBadge} style={{ color: '#721c24', background: '#f8d7da', border: '1px solid #f5c6cb' }}>Locked</span>
                         )}
                       </td>
 
-                      <td style={{ padding: '16px 20px' }}>
+                      <td className={s.dashboardTd}>
                         {isPassed ? (
-                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#1a3a6a', background: '#ebf8ff', padding: '6px 14px', borderRadius: '4px', border: '1px solid #bee3f8', display: 'inline-block', width: '100px', textAlign: 'center' }}>PASSED</span>
+                          <span className={s.dashboardEnrollmentStatusText} style={{ color: '#1a3a6a', background: '#ebf8ff', border: '1px solid #bee3f8' }}>PASSED</span>
                         ) : isInProgress ? (
-                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#856404', background: '#fff3cd', padding: '6px 14px', borderRadius: '4px', border: '1px solid #ffeeba', display: 'inline-block', width: '100px', textAlign: 'center' }}>IN PROGRESS</span>
+                          <span className={s.dashboardEnrollmentStatusText} style={{ color: '#856404', background: '#fff3cd', border: '1px solid #ffeeba' }}>IN PROGRESS</span>
                         ) : holdsPrereqs ? (
-                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#155724', background: '#f0fdf4', padding: '6px 14px', borderRadius: '4px', border: '1px solid #bbf7d0', display: 'inline-block', width: '100px', textAlign: 'center' }}>ELIGIBLE</span>
+                          <span className={s.dashboardEnrollmentStatusText} style={{ color: '#155724', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>ELIGIBLE</span>
                         ) : (
-                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#4a5568', background: '#e2e3e5', padding: '6px 14px', borderRadius: '4px', opacity: 0.65, display: 'inline-block', width: '100px', textAlign: 'center' }}>LOCKED</span>
+                          <span className={s.dashboardEnrollmentStatusText} style={{ color: '#4a5568', background: '#e2e3e5', opacity: 0.65 }}>LOCKED</span>
                         )}
                       </td>
                     </tr>
@@ -567,29 +518,27 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
           </div>
         </div>
 
-        {/* ── 📊 COMPLETED COURSES TABLE (WITH CONTROL BAR) ── */}
+        {/* ── COMPLETED COURSES TABLE (WITH CONTROL BAR) ── */}
         {completed?.length > 0 && (
-          <div style={{ marginTop: 48, borderTop: '2px solid #cbd5e0', paddingTop: 24 }}>
-            <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, color: '#2d3748' }}>
-              📚 Student History : {processedCompleted.length} Completed Courses 
-            </div>
+          <div className={s.historySection}>
+            <div className={s.historyHeadingTitle}>Student History : {processedCompleted.length} Completed Courses</div>
 
-            {/* Interactive Search, Filter & Ordering Dashboard Controls */}
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ flex: '1', minWidth: '260px' }}>
+            {/* Interactive Controls */}
+            <div className={s.historyControlsPanel}>
+              <div className={s.historySearchWrapper}>
                 <input 
                   type="text" 
-                  placeholder="🔍 Search anything (Code, Name, Grade, Term, Year)..." 
+                  placeholder="Search anything (Code, Name, Grade, Term, Year)..." 
                   value={completedSearch}
                   onChange={(e) => setCompletedSearch(e.target.value)}
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '14px', outline: 'none' }}
+                  className={s.historySearchField}
                 />
               </div>
               <div>
                 <select 
                   value={completedSortKey} 
                   onChange={(e) => setCompletedSortKey(e.target.value)}
-                  style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '14px', background: '#fff', fontWeight: 600, color: '#4a5568', cursor: 'pointer' }}
+                  className={s.historySelectField}
                 >
                   <option value="date">Sort Option: Term & Year (Default)</option>
                   <option value="code">Sort Option: Course Code</option>
@@ -598,45 +547,41 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
                   <option value="grade">Sort Option: Performance Grade</option>
                 </select>
               </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 600, color: '#4a5568', cursor: 'pointer', userSelect: 'none' }}>
+              <label className={s.historyLabelCheckbox}>
                 <input 
                   type="checkbox" 
                   checked={isInverted} 
                   onChange={(e) => setIsInverted(e.target.checked)}
-                  style={{ width: '17px', height: '17px', cursor: 'pointer' }}
+                  className={s.historyCheckboxInput}
                 />
                 Invert Ordering (Newest First / Descending)
               </label>
             </div>
 
-            <div style={{ overflowX: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15, minWidth: 950, border: '1px solid #cbd5e0' }}>
+            <div className={s.historyTableContainer}>
+              <table className={s.historyTable}>
                 <thead>
-                  <tr style={{ background: '#edf2f7', borderBottom: '2px solid #cbd5e0' }}>
+                  <tr>
                     {['Course Code', 'Official Course Title', 'Credits Earned', 'Final Grade', 'Academic Term', 'Enrollment Date', 'Category Key'].map(h => (
-                      <th key={h} style={{ padding: '14px 18px', textAlign: 'left', border: '1px solid #cbd5e0', fontWeight: 700, color: '#4a5568', fontSize: '15px' }}>
-                        {h}
-                      </th>
+                      <th key={h} className={s.historyTh}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {processedCompleted.map((c, i) => (
-                    <tr key={c.code + i} style={{ background: i % 2 === 0 ? '#fff' : '#f7fafc', borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '14px 18px', border: '1px solid #e2e8f0', fontWeight: 700, color: '#1a3a6a', fontFamily: 'monospace', fontSize: '15px' }}>{c.code}</td>
-                      <td style={{ padding: '14px 18px', border: '1px solid #e2e8f0', color: '#2d3748', fontWeight: 500 }}>{c.name ?? '—'}</td>
-                      <td style={{ padding: '14px 18px', border: '1px solid #e2e8f0', textAlign: 'center', fontWeight: '600' }}>{c.credits ?? '—'}</td>
-                      <td style={{ padding: '14px 18px', border: '1px solid #e2e8f0', textAlign: 'center', fontWeight: 800, color: '#2f855a', fontSize: '16px' }}>{c.grade ?? '—'}</td>
-                      <td style={{ padding: '14px 18px', border: '1px solid #e2e8f0', color: '#4a5568', fontWeight: '500' }}>{c.term ?? '—'}</td>
-                      <td style={{ padding: '14px 18px', border: '1px solid #e2e8f0', color: '#718096' }}>{c.enrolledDate  ?? '—'}</td>
-                      <td style={{ padding: '14px 18px', border: '1px solid #e2e8f0', color: '#2b6cb0', fontWeight: '600', fontFamily: 'monospace' }}>{c.type2  ?? '—'}</td>
+                    <tr key={c.code + i}>
+                      <td className={`${s.historyTd} ${s.historyTdCode}`}>{c.code}</td>
+                      <td className={`${s.historyTd} ${s.historyTdName}`}>{c.name ?? '—'}</td>
+                      <td className={`${s.historyTd} ${s.historyTdCredits}`}>{c.credits ?? '—'}</td>
+                      <td className={`${s.historyTd} ${s.historyTdGrade}`}>{c.grade ?? '—'}</td>
+                      <td className={`${s.historyTd} ${s.historyTdTerm}`}>{c.term ?? '—'}</td>
+                      <td className={s.historyTd}>{c.enrolledDate  ?? '—'}</td>
+                      <td className={`${s.historyTd} ${s.historyTdCategory}`}>{c.type2  ?? '—'}</td>
                     </tr>
                   ))}
                   {processedCompleted.length === 0 && (
                     <tr>
-                      <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#a0aec0', fontStyle: 'italic' }}>
-                        No matched completed courses found for your search query criteria.
-                      </td>
+                      <td colSpan={7} className={s.historyEmptyMessageCell}>No matched completed courses found for your search query criteria.</td>
                     </tr>
                   )}
                 </tbody>
@@ -645,14 +590,14 @@ export default function Chains({ chains, coReqEdges, blockedCodes, prereqEdges, 
           </div>
         )}
 
-        <pre style={{ fontSize: 10, background: '#ffe', padding: 8, marginBottom: 8, marginTop: 24 }}>
+        <pre className={s.debugPre}>
           inProgress[0]: {JSON.stringify(inProgress?.[0], null, 2)}
           allOE length: {allOE.length}
           completed OE: {completed?.filter(c => c.type2 === 'OE').length}
           inProgress OE: {inProgress?.filter(c => c.type2 === 'OE').length}
         </pre>
 
-      </footer>
+      </div>
     </div>
   )
 }

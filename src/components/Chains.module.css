@@ -1,93 +1,597 @@
-.wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.canvasContainer {
   overflow-x: auto;
-  overflow-y: visible;
-  padding: 4px 0 12px;
-  min-width: 0;
-}
-
-.wrap svg {
-  min-width: max-content;
-}
-
-.hint {
-  font-size: 15px;
-  color: var(--gray-300, #ccc);
-  font-style: italic;
-  letter-spacing: 0.03em;
-  padding: 2px 0;
-}
-
-.hoverInfo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  padding: 3px 0;
-  min-height: 18px;
-}
-.hoveredCode {
-  font-family: monospace;
-  font-weight: 600;
-  color: #d97706;
-  background: #fef3c7;
-  padding: 1px 7px;
-  border-radius: 99px;
-  font-size: 16px;
-}
-.prereqList {
-  color: var(--gray-400, #999);
-  font-size: 16px;
-}
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding-top: 6px;
-  border-top: 0.5px solid var(--gray-100, #eee);
-  font-size: 16px;
-  color: var(--gray-400, #999);
-}
-.legendItem {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.coReqBadge {
-  background: #6366f1;
-  color: #fff;
-  font-size: 11px;
-  padding: 1px 8px;
-  border-radius: 99px;
-  letter-spacing: 0.05em;
-  font-weight: 500;
-}
-
-/* ── Chains responsive ── */
-.chainsContainer {
-  overflow-x: auto;
+  padding: 16px;
+  position: relative;
   -webkit-overflow-scrolling: touch;
 }
 
+.arrowSvg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  overflow: visible;
+}
+
+/* Study Plan Matrix Grid Flow Layout */
+.flowTable {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+  min-width: 1200px; /* Crucial: Prevents code pills from squishing and piling on mobile viewports */
+}
+
+.yearHeaderCell {
+  text-align: center;
+  padding: 16px 4px 24px;
+  border-bottom: 2px solid #ccc;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.yearHeaderCellBorder {
+  border-right: 2px solid #ccc;
+}
+
+.semesterHeaderCell {
+  text-align: center;
+  padding: 10px 8px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  font-size: 18px;
+  color: #555;
+}
+
+.flowCell {
+  vertical-align: top;
+  padding: 44px 8px;
+  border: 1px solid #eee;
+  min-width: 120px;
+  text-align: left;
+}
+
+.flowCellSummer {
+  vertical-align: middle;
+  padding: 44px 8px;
+  border: 1px solid #eee;
+  min-width: 120px;
+  text-align: center;
+}
+
+/* Unified Course Pill Base Elements */
+.coursePill {
+  border-radius: 6px;
+  padding: 13px 10px;
+  margin: 25px 25px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.2s, filter 0.2s, opacity 0.2s;
+}
+
+.pillCompleted {
+  background: #d4edda;
+  border: 1px solid #28a745;
+  color: #155724;
+}
+
+.pillInProgress {
+  background: #fff3cd;
+  border: 1px solid #856404;
+  color: #856404;
+}
+
+.pillLocked {
+  background: #e2e3e5;
+  border: 1px solid #6c757d;
+  color: #6c757d;
+}
+
+/* Hover Contextual Outlines */
+.pillHovered {
+  outline: 3px solid #333;
+  outline-offset: 2px;
+  transform: scale(1.05);
+}
+
+.pillPrereq {
+  outline: 3px solid #28a745;
+  outline-offset: 2px;
+  transform: scale(1.02);
+}
+
+.pillUnlock {
+  outline: 3px solid #0066cc;
+  outline-offset: 2px;
+  transform: scale(1.02);
+}
+
+.pillDimmed {
+  filter: blur(2px);
+  opacity: 0.35;
+}
+
+/* Fixed Tooltip Windows */
+.tooltipWindow {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  z-index: 9999;
+  pointer-events: none;
+  min-width: 160px;
+  max-width: 260px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.tooltipCode {
+  客观-font-weight: 600;
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.tooltipTitle {
+  color: #444;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.tooltipState {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Footer Section Panels */
+.footerWrap {
+  margin-top: 24px;
+  padding: 16px;
+  border-top: 1px solid #eee;
+}
+
+.legendGrid {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legendBox {
+  width: 32px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.legendTextGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.legendLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+.legendSub {
+  font-size: 11px;
+  color: #888;
+}
+
+.legendBorderBox {
+  width: 32px;
+  height: 20px;
+  border-radius: 4px;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+/* Extra Courses Area Layout */
+.extraSection {
+  margin-top: 20px;
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+.extraHeadingTitle {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #555;
+}
+
+.extraItemsRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.extraItemCard {
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.extraCategoryTag {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* Specialty Electives Layout Section Dashboard */
+.dashboardSection {
+  margin-top: 48px;
+  border-top: 3px solid #1a3a6a;
+  padding-top: 24px;
+}
+
+.dashboardHeaderBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.dashboardMainTitle {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1a3a6a;
+  letter-spacing: -0.3px;
+}
+
+.dashboardSubTitle {
+  font-size: 14px;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.dashboardTableContainer {
+  overflow-x: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  border-radius: 8px;
+}
+
+.dashboardTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  background: #fff;
+  border: 1px solid #cbd5e0;
+}
+
+.dashboardTh {
+  padding: 16px 20px;
+  text-align: left;
+  font-weight: 700;
+  color: #2d3748;
+  fontSize: 15px;
+  background: #edf2f7;
+}
+
+.dashboardTable tr {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dashboardTable tr:last-child {
+  border-bottom: none;
+}
+
+.dashboardTd {
+  padding: 16px 20px;
+}
+
+.dashboardTdTrackTag {
+  font-size: 13px; 
+  font-weight: 700; 
+  padding: 6px 14px; 
+  border-radius: 20px; 
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.dashboardTdCode {
+  font-weight: 800; 
+  color: #1a3a6a; 
+  font-family: monospace; 
+  font-size: 16px;
+}
+
+.dashboardTdTitle {
+  color: #2d3748; 
+  font-weight: 600; 
+  font-size: 15px;
+}
+
+.dashboardPrereqTokenContainer {
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 6px;
+}
+
+.dashboardPrereqEmptyText {
+  color: #a0aec0; 
+  font-style: italic; 
+  font-size: 14px;
+}
+
+.dashboardPrereqToken {
+  font-size: 12px; 
+  padding: 4px 10px; 
+  border-radius: 4px; 
+  font-family: monospace;
+  font-weight: 700;
+}
+
+.dashboardStatusBadge {
+  font-size: 13px; 
+  font-weight: 700; 
+  padding: 4px 12px; 
+  border-radius: 12px;
+}
+
+.dashboardEnrollmentStatusText {
+  font-size: 13px; 
+  font-weight: 800; 
+  padding: 6px 14px; 
+  border-radius: 4px; 
+  display: inline-block; 
+  width: 100px; 
+  text-align: center;
+}
+
+/* Student Completed Course Layout Controls */
+.historySection {
+  margin-top: 48px; 
+  border-top: 2px solid #cbd5e0; 
+  padding-top: 24px;
+}
+
+.historyHeadingTitle {
+  font-size: 20px; 
+  font-weight: 700; 
+  margin-bottom: 16px; 
+  color: #2d3748;
+}
+
+.historyControlsPanel {
+  display: flex; 
+  gap: 16px; 
+  margin-bottom: 20px; 
+  flex-wrap: wrap; 
+  align-items: center;
+}
+
+.historySearchWrapper {
+  flex: 1; 
+  min-width: 260px;
+}
+
+.historySearchField {
+  width: 100%; 
+  padding: 10px 14px; 
+  border-radius: 6px; 
+  border: 1px solid #cbd5e0; 
+  font-size: 14px; 
+  outline: none;
+  box-sizing: border-box;
+}
+
+.historySelectField {
+  padding: 10px 14px; 
+  border-radius: 6px; 
+  border: 1px solid #cbd5e0; 
+  font-size: 14px; 
+  background: #fff; 
+  font-weight: 600; 
+  color: #4a5568; 
+  cursor: pointer;
+}
+
+.historyLabelCheckbox {
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  font-size: 14px; 
+  font-weight: 600; 
+  color: #4a5568; 
+  cursor: pointer; 
+  user-select: none;
+}
+
+.historyCheckboxInput {
+  width: 17px; 
+  height: 17px; 
+  cursor: pointer;
+}
+
+.historyTableContainer {
+  overflow-x: auto; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+
+.historyTable {
+  width: 100%; 
+  border-collapse: collapse; 
+  font-size: 15px; 
+  border: 1px solid #cbd5e0;
+}
+
+.historyTh {
+  padding: 14px 18px; 
+  text-align: left; 
+  border: 1px solid #cbd5e0; 
+  font-weight: 700; 
+  color: #4a5568; 
+  font-size: 15px;
+  background: #edf2f7;
+}
+
+.historyTable tr {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.historyTd {
+  padding: 14px 18px; 
+  border: 1px solid #e2e8f0;
+}
+
+.historyTdCode {
+  font-weight: 700; 
+  color: #1a3a6a; 
+  font-family: monospace; 
+  font-size: 15px;
+}
+
+.historyTdName {
+  color: #2d3748; 
+  font-weight: 500;
+}
+
+.historyTdCredits {
+  text-align: center; 
+  font-weight: 600;
+}
+
+.historyTdGrade {
+  text-align: center; 
+  font-weight: 800; 
+  color: #2f855a; 
+  font-size: 16px;
+}
+
+.historyTdTerm {
+  color: #4a5568; 
+  font-weight: 500;
+}
+
+.historyTdCategory {
+  color: #2b6cb0; 
+  font-weight: 600; 
+  font-family: monospace;
+}
+
+.historyEmptyMessageCell {
+  padding: 24px; 
+  text-align: center; 
+  color: #a0aec0; 
+  font-style: italic;
+}
+
+.debugPre {
+  font-size: 10px; 
+  background: #ffe; 
+  padding: 8px; 
+  margin-bottom: 8px; 
+  margin-top: 24px;
+}
+
+/* ────────────────────────────────────────────────────────
+   PHONE VIEWPORT RESPONSIVE LAYER OVERRIDES (<= 768px Screens)
+   ──────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .wrap {
-    padding: 4px 0 8px;
+  /* Restructure Specialty Dashboard list */
+  .dashboardTable, .dashboardTable thead, .dashboardTable tbody, .dashboardTable tr, .dashboardTable td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .dashboardTable thead {
+    display: none;
+  }
+  
+  .dashboardTable tr {
+    margin: 12px;
+    border: 1px solid #cbd5e0 !important;
+    border-radius: 8px;
+    padding: 12px;
+    background: #fff;
+  }
+  
+  .dashboardTd {
+    padding: 6px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .dashboardTd::before {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #718096;
+    font-weight: 700;
+    margin-bottom: 2px;
   }
 
-  .legend {
-    gap: 6px;
-    font-size: 13px;
+  .dashboardTable tr td:nth-child(1)::before { content: "Specialty Track:"; }
+  .dashboardTable tr td:nth-child(2)::before { content: "Course Code:"; }
+  .dashboardTable tr td:nth-child(3)::before { content: "Course Title:"; }
+  .dashboardTable tr td:nth-child(4)::before { content: "Prerequisites:"; }
+  .dashboardTable tr td:nth-child(5)::before { content: "Prereqs Status:"; }
+  .dashboardTable tr td:nth-child(6)::before { content: "Enrollment Status:"; }
+
+  /* Restructure Student Course History list */
+  .historyTable, .historyTable thead, .historyTable tbody, .historyTable tr, .historyTable td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .historyTable thead {
+    display: none;
+  }
+  
+  .historyTable tr {
+    margin: 12px;
+    border: 1px solid #cbd5e0 !important;
+    border-radius: 8px;
+    padding: 12px;
+    background: #fff;
+  }
+  
+  .historyTd {
+    padding: 6px 0;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .historyTd::before {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #718096;
+    font-weight: 700;
+    margin-right: 8px;
+    flex-shrink: 0;
   }
 
-  .hoverInfo {
-    font-size: 13px;
-  }
+  .historyTable tr td:nth-child(1)::before { content: "Course Code:"; }
+  .historyTable tr td:nth-child(2)::before { content: "Course Title:"; }
+  .historyTable tr td:nth-child(3)::before { content: "Credits:"; }
+  .historyTable tr td:nth-child(4)::before { content: "Final Grade:"; }
+  .historyTable tr td:nth-child(5)::before { content: "Academic Term:"; }
+  .historyTable tr td:nth-child(6)::before { content: "Enrollment Date:"; }
+  .historyTable tr td:nth-child(7)::before { content: "Category Key:"; }
 
-  .hoveredCode {
-    font-size: 13px;
+  .historyTdCredits, .historyTdGrade {
+    text-align: right;
   }
 }
