@@ -1,6 +1,24 @@
 import { useState, useEffect } from 'react'
 import s from './CourseBrowser.module.css'
 
+// ── Co-requisite pairs matrix added to the frontend ───────────────────
+const COREQS = [
+  ['PHY102',  'PHY102L'],
+  ['PHY201',  'PHY201L'],
+  ['CHE205',  'CHE201L'],
+  ['CHE205',  'CME210'],
+  ['CHE206',  'CHE206L'],
+  ['MTT204',  'MTT205'],
+
+  ['CME331',  'CME305'],
+  ['CME301',  'CME320'],
+  ['CME331',  'CME321'],
+
+  ['CME400',  'CME430'],
+  ['CME400',  'CME450'],
+  ['CME400',  'CME455'],
+]
+
 function StatusDot() {
   return <span className={`${s.dot} ${s.dotOpen}`} title="Open" />
 }
@@ -172,7 +190,7 @@ export default function CourseBrowser({
               style={{ fontSize: 13, padding: '2px 10px', border: '1px solid #ccc', borderRadius: 4,
                 cursor: 'pointer',
                 background: termFilter === val ? '#1a3a6a' : '#fff',
-                color:      termFilter === val ? '#fff'    : '#555' }}
+                color:       termFilter === val ? '#fff'    : '#555' }}
               onClick={() => setTermFilter(val)}
             >{label}</button>
           ))}
@@ -184,7 +202,7 @@ export default function CourseBrowser({
               style={{ fontSize: 13, padding: '2px 10px', border: '1px solid #ccc', borderRadius: 4,
                 cursor: 'pointer',
                 background: campusFilter === val ? '#1a3a6a' : '#fff',
-                color:      campusFilter === val ? '#fff'    : '#555' }}
+                color:       campusFilter === val ? '#fff'    : '#555' }}
               onClick={() => setCampusFilter(val)}
             >{label}</button>
           ))}
@@ -208,7 +226,21 @@ export default function CourseBrowser({
           const currentSelection  = selected[r.code] ?? cartItemForCourse?.section?.class_nbr
 
           const displayCredits    = r.credits ?? displayGroups[0]?.primary?.max_units ?? 0
-          const hasPrereqsMet     = filter === 'allful' ? true : r.prereqsMet !== false
+
+          // ── Co-requisite Validation Core Real-time logic ──────────────────
+          const coReqPartners = COREQS.filter(([a, b]) => a === r.code || b === r.code).map(([a, b]) => a === r.code ? b : a);
+          const isUnlockedByActiveCoreq = coReqPartners.some(partnerCode => {
+            const partnerInCart = (cart || []).some(c => c.code === partnerCode);
+            const partnerRec = recommendations.find(x => x.code === partnerCode);
+            const partnerBlocked = blockedSet.includes(partnerCode);
+            const partnerPrereqsMet = partnerRec ? partnerRec.prereqsMet !== false : false;
+            return partnerInCart || (!partnerBlocked && partnerPrereqsMet);
+          });
+
+          const nativePrereqsMet   = filter === 'allful' ? true : r.prereqsMet !== false
+          // Bypasses locked state if co-requisite partner option is available or currently in cart
+          const hasPrereqsMet     = nativePrereqsMet || isUnlockedByActiveCoreq;
+
           const courseCredits     = r.credits ?? displayGroups[0]?.primary?.max_units ?? 0
           const isLimitExceeded   = !inCart && (totalCartCredits + courseCredits > 20)
 
@@ -274,7 +306,26 @@ export default function CourseBrowser({
                         e.stopPropagation()
                         if (!hasPrereqsMet && !inCart) return
                         if (isLimitExceeded  && !inCart) return
-                        handleAdd(r)
+                        
+                        if (inCart) {
+                          // Cascading deletion configuration: If it's a parent course, remove its children co-reqs too
+                          const pairsAsParent = COREQS.filter(([a, b]) => a === r.code);
+                          pairsAsParent.forEach(([a, b]) => {
+                            if ((cart || []).some(c => c.code === b)) {
+                              const childCourse = recommendations.find(x => x.code === b) || All_courses.find(x => x.code === b);
+                              const childGroup = childCourse?.displayGroups?.[0] || {};
+                              const childSectionToInject = {
+                                class_nbr: childGroup.class_nbr,
+                                section:   childGroup.primary?.section,
+                              };
+                              onToggleCart(b, childSectionToInject);
+                            }
+                          });
+                          // Finally remove the parent item out of the cart array list
+                          handleAdd(r);
+                        } else {
+                          handleAdd(r);
+                        }
                       }}
                     >
                       {inCart          ? '✓ Added'

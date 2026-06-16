@@ -45,7 +45,6 @@ function formatGroupedMeetings(recCourse) {
     return `   [Section: ${sec.section || 'TBA'}] TERM: ${sec.session || 'Regular'} | ${dayStr} @ ${timeStr} (${sec.campus || 'AD'})`;
   }).join('\n');
 }
-
 function buildSystemPrompt(student, inProgress, completed, recommendations, prereqEdges) {
   const available = recommendations.filter(r => r.prereqsMet && !r.isBlocked)
   const locked    = recommendations.filter(r => !r.prereqsMet && !r.isBlocked)
@@ -53,11 +52,16 @@ function buildSystemPrompt(student, inProgress, completed, recommendations, prer
   
   const completedSet = new Set((completed || []).map(c => c.code));
 
+  const completedCoursesList = (completed || [])
+    .map(c => `- ${c.code}: ${c.name} (${c.credits ?? 0} cr) | Grade: ${c.grade ?? 'N/A'}`)
+    .join('\n') || '- None';
+
   const majorElectivesContext = MejorElectiveList.map(m => {
     const prereqs = prereqEdges?.[m.code] || [];
     const isPassed = completedSet.has(m.code);
     const prereqsFulfilled = prereqs.length === 0 || prereqs.every(p => completedSet.has(p));
     const prereqListStr = prereqs.length > 0 ? prereqs.join(', ') : 'None';
+
     return `- ${m.code}: ${m.name} (${m.track})\n  * Prerequisites: ${prereqListStr} | Prereqs Met: ${prereqsFulfilled ? 'YES' : 'NO'} | Course Passed: ${isPassed ? 'YES' : 'NO'}`;
   }).join('\n');
 
@@ -68,6 +72,9 @@ function buildSystemPrompt(student, inProgress, completed, recommendations, prer
 
   ACADEMIC METRICS:
   - Major: ${student.major} | CGPA: ${student.cgpa ?? '—'} | Remaining Credits: ${remaining} cr
+
+  COMPLETED COURSES & GRADES:
+  ${completedCoursesList}
 
   CURRENTLY ENROLLED:
   ${inProgress.map(c => `- ${c.code}: ${c.name}`).join('\n') || '- None'}
