@@ -227,19 +227,17 @@ export default function CourseBrowser({
 
           const displayCredits    = r.credits ?? displayGroups[0]?.primary?.max_units ?? 0
 
-          // ── Co-requisite Validation Core Real-time logic ──────────────────
-          const coReqPartners = COREQS.filter(([a, b]) => a === r.code || b === r.code).map(([a, b]) => a === r.code ? b : a);
-          const isUnlockedByActiveCoreq = coReqPartners.some(partnerCode => {
-            const partnerInCart = (cart || []).some(c => c.code === partnerCode);
-            const partnerRec = recommendations.find(x => x.code === partnerCode);
-            const partnerBlocked = blockedSet.includes(partnerCode);
-            const partnerPrereqsMet = partnerRec ? partnerRec.prereqsMet !== false : false;
-            return partnerInCart || (!partnerBlocked && partnerPrereqsMet);
-          });
+          // ── Co-requisite Parent-Child Tracking Engine ──────────────────
+          const childPairConfig = COREQS.find(([parent, child]) => child === r.code);
+          const parentCode = childPairConfig ? childPairConfig[0] : null;
+          const isParentInCart = parentCode ? (cart || []).some(c => c.code === parentCode) : false;
+          
+          // Flag indicating that the module is a child lab missing its parent lecture module in the registration cart
+          const missingParentCoReq = !!parentCode && !isAlreadySubmitted && !inCart && !isParentInCart;
 
           const nativePrereqsMet   = filter === 'allful' ? true : r.prereqsMet !== false
-          // Bypasses locked state if co-requisite partner option is available or currently in cart
-          const hasPrereqsMet     = nativePrereqsMet || isUnlockedByActiveCoreq;
+          // Strictly block child co-req matching lines until parent lecture gets selected
+          const hasPrereqsMet     = missingParentCoReq ? false : nativePrereqsMet;
 
           const courseCredits     = r.credits ?? displayGroups[0]?.primary?.max_units ?? 0
           const isLimitExceeded   = !inCart && (totalCartCredits + courseCredits > 20)
@@ -250,13 +248,15 @@ export default function CourseBrowser({
                 ${s.card}
                 ${blocked           ? s.cardBlocked : ''}
                 ${inCart            ? s.cardInCart  : ''}
-                ${!hasPrereqsMet && !blocked ? s.cardLocked : ''}
+                ${!hasPrereqsMet && !blocked && !missingParentCoReq ? s.cardLocked : ''}
               `}
-              style={isAlreadySubmitted ? {
-                borderLeft: '3px solid #6b46c1',
-                background: '#faf5ff',
-                opacity: 0.55, // Low brightness style mapping rule applied
-              } : {}}
+              style={
+                isAlreadySubmitted 
+                  ? { borderLeft: '3px solid #6b46c1', background: '#faf5ff', opacity: 0.55 }
+                  : (missingParentCoReq && !blocked)
+                    ? { borderLeft: '4px solid #d97706', background: '#fffbeb', borderTop: '1px solid #fcd34d', borderRight: '1px solid #fcd34d', borderBottom: '1px solid #fcd34d' }
+                    : {}
+              }
             >
 
               {/* ── Header row ──────────────────────────────── */}
@@ -271,6 +271,16 @@ export default function CourseBrowser({
                 <span className={s.hCode}>{r.code}</span>
                 <span className={s.hSep}> – </span>
                 <span className={s.hName}>{r.name}</span>
+
+                {/* ── Real-time Alert Note Banner ──────────────── */}
+                {missingParentCoReq && !blocked && (
+                  <span style={{
+                    marginLeft: 12, fontSize: 11, color: '#b45309', fontWeight: 700,
+                    background: '#fef3c7', padding: '3px 8px', borderRadius: 4, border: '1px solid #f59e0b'
+                  }}>
+                    ⚠️ You must take {parentCode} with this course. Add {parentCode} to cart first.
+                  </span>
+                )}
 
                 {(r.downstreamUnlocks || 0) > 0 && (
                   <span className={s.unlockScore} title={`Unlocks ${r.downstreamUnlocks} future courses`}>
@@ -328,9 +338,10 @@ export default function CourseBrowser({
                         }
                       }}
                     >
-                      {inCart          ? '✓ Added'
-                        : !hasPrereqsMet  ? '🔒 Locked'
-                        : isLimitExceeded ? '⚠️ Max Credits'
+                      {inCart            ? '✓ Added'
+                        : missingParentCoReq ? `🔒 Needs ${parentCode}`
+                        : !hasPrereqsMet    ? '🔒 Locked'
+                        : isLimitExceeded   ? '⚠️ Max Credits'
                         : '+ Add'}
                     </button>
                   )}
