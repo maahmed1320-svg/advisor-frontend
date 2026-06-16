@@ -1,24 +1,76 @@
-.page { display:flex; flex-direction:column; height:100%; overflow:hidden; background:#fff; }
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+}
 
 /* Top bar styles */
 .topbar {
-  display:flex; align-items:center; gap:16px;
-  padding:14px 20px; border-bottom:1px solid #ddd;
-  flex-shrink:0; background:#f7f5f0; flex-wrap:wrap;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
+  background: #f7f5f0;
+  flex-wrap: wrap;
 }
+
 .backBtn {
-  font-size:20px; padding:6px 16px; border:0.5px solid #bbb;
-  border-radius:5px; background:#fff; cursor:pointer; color:#555; white-space:nowrap;
+  font-size: 20px;
+  padding: 6px 16px;
+  border: 0.5px solid #bbb;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+  color: #555;
+  white-space: nowrap;
   font-weight: 600;
 }
-.backBtn:hover { background:#eee; }
-.title { font-size:22px; font-weight:700; color:#111; }
-.subtitle { font-size:19px; font-weight: 500; color:#666; }
+
+.backBtn:hover {
+  background: #eee;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+}
+
+.subtitle {
+  font-size: 19px;
+  font-weight: 500;
+  color: #666;
+}
 
 .conflictPill {
-  font-size:18px; padding:6px 14px; border-radius:99px;
-  background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; white-space:nowrap;
+  font-size: 18px;
+  padding: 6px 14px;
+  border-radius: 99px;
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  white-space: nowrap;
   font-weight: 600;
+}
+
+.diagnosticBox {
+  background: #fff3cd;
+  border: 1px solid #ffeeba;
+  color: #856404;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: monospace;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  margin-left: 20px;
 }
 
 .topbarActionWrap {
@@ -27,10 +79,13 @@
   gap: 10px; 
   align-items: center;
 }
+
 .submitErrorLabel {
   font-size: 13px; 
   color: #dc2626;
+  font-weight: 500;
 }
+
 .submitScheduleBtn {
   padding: 8px 20px; 
   border-radius: 8px; 
@@ -39,36 +94,34 @@
   font-weight: 600; 
   font-size: 13px; 
   color: #fff;
-  background: #1a6a2a;
+  background: #1c7781;
+  transition: opacity 0.15s;
 }
-.btnDisabled {
+
+.submitScheduleBtn:disabled {
   background: #ccc !important;
   cursor: not-allowed !important;
 }
-.submittedStatusText {
-  font-size: 13px; 
-  color: #1a6a2a; 
-  font-weight: 600;
-}
+
 .withdrawBtn {
   padding: 8px 20px; 
   border-radius: 8px; 
   border: none; 
   font-weight: 600; 
   font-size: 13px;
-}
-.withdrawActive {
-  background: #7f1d1d;
   color: #fff;
+  background: #7f1d1d;
   cursor: pointer;
-}
-.withdrawDisabled {
-  background: #e5e5e5;
-  color: #aaa;
-  cursor: not-allowed;
+  transition: opacity 0.15s;
 }
 
-/* Base Workspace Splits styles */
+.withdrawBtn:disabled {
+  background: #e5e5e5 !important;
+  color: #aaa !important;
+  cursor: not-allowed !important;
+}
+
+/* Master Workspace Container Layout split */
 .workspaceContainer {
   display: flex; 
   flex: 1; 
@@ -76,6 +129,7 @@
   overflow: hidden; 
   background: #fcfcfb;
 }
+
 .emptyCartMessage {
   width: 100%; 
   text-align: center; 
@@ -86,9 +140,9 @@
   line-height: 1.8;
 }
 
-/* Sidebar structure layout - Locked at 30% horizontal space */
+/* Sidebar structure layout */
 .sidebarLayoutColumn {
-  flex: 0 0 30%; 
+  flex: 0 0 32%; 
   display: flex; 
   flex-direction: column; 
   border-right: 1px solid #e2e8f0; 
@@ -97,6 +151,7 @@
   box-sizing: border-box; 
   overflow-y: auto;
 }
+
 .tabsHeaderWrapper {
   display: flex; 
   gap: 4px; 
@@ -104,6 +159,7 @@
   margin-bottom: 16px; 
   width: 100%;
 }
+
 .tabSelectorButton {
   padding: 8px 24px; 
   font-size: 18px; 
@@ -113,12 +169,14 @@
   border-radius: 8px 8px 0 0;
   transition: background 0.15s, color 0.15s;
 }
+
 .tabStateActive {
   background: #fff !important; 
   color: #1a3a6a !important; 
   border-bottom: 2px solid #fff !important; 
   box-shadow: 0 -2px 6px rgba(0,0,0,0.04);
 }
+
 .tabStateInactive {
   background: #e8edf4 !important; 
   color: #666 !important; 
@@ -131,13 +189,16 @@
   gap: 10px; 
   margin-bottom: 16px;
 }
+
 .fallbackIndicatorBadge {
   width: 4px; 
   height: 18px; 
   border-radius: 2px;
 }
+
 .badgeFallColor { background: #2a6aaa; }
 .badgeSummerColor { background: #aa7a2a; }
+
 .staticHeaderLabelText {
   font-weight: 700; 
   font-size: 15px; 
@@ -150,7 +211,7 @@
   gap: 12px;
 }
 
-/* Item cards left-side detail layout items */
+/* Card Detail Items */
 .itemCardWrapper {
   display: flex; 
   width: 100%; 
@@ -160,14 +221,13 @@
   background: #fff; 
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
-.itemConflictBorder {
-  background: #fff8f8 !important;
-  border-color: #fca5a5 !important;
-}
+
 .cardColorGutterBar {
   width: 5px; 
   flex-shrink: 0;
+  background-color: var(--gutter-bg-color, #cbd5e0);
 }
+
 .cardContentBodyContainer {
   padding: 12px; 
   display: flex; 
@@ -176,23 +236,27 @@
   min-width: 0;
   flex: 1;
 }
+
 .cardTopFlexRow {
   display: flex; 
   align-items: center; 
   justify-content: space-between; 
   width: 100%;
 }
+
 .cardHeadingMetaGroup {
   display: flex; 
   align-items: center; 
   gap: 8px;
 }
+
 .cardCourseCodeText {
   font-size: 25px; 
   font-family: monospace; 
   font-weight: 700; 
   color: #1a3a6a;
 }
+
 .cardCreditsPillBadge {
   font-size: 11px; 
   background: #f7fafc; 
@@ -201,6 +265,7 @@
   border-radius: 4px; 
   color: #4a5568;
 }
+
 .cardConflictPillBadge {
   color: #dc2626; 
   font-size: 11px; 
@@ -209,40 +274,51 @@
   padding: 1px 6px; 
   border-radius: 4px;
 }
+
+.cardEnrolledStatusBadge {
+  font-size: 11px; 
+  font-weight: 700; 
+  color: #16a34a; 
+  background: #dcfce7; 
+  padding: 3px 8px; 
+  border-radius: 4px;
+}
+
 .cardRemoveActionBtn {
   color: #e53e3e; 
   background: none; 
   border: 1px solid #fed7d7; 
-  padding: 4px 12px; 
+  padding: 2px 8px; 
   border-radius: 4px; 
   cursor: pointer; 
   font-size: 11px; 
   font-weight: 500;
   transition: all 0.15s ease;
 }
+
 .cardRemoveActionBtn:hover {
   background: #fff5f5;
   border-color: #dc2626;
 }
+
 .cardCourseTitleLabel {
-  font-size: 18px; 
+  font-size: 13px; 
   font-weight: 600; 
-  font-style: italic; 
-  color: #111; 
-  margin-bottom: 6px; 
-  line-height: 1.4;
+  color: #2d3748;
   white-space: nowrap; 
   overflow: hidden; 
   text-overflow: ellipsis;
 }
+
 .cardSectionDetailsMetadataBox {
-  font-size: 16px; 
-  color: #555; 
-  line-height: 1.4;
+  font-size: 12px; 
+  color: #718096; 
   display: flex; 
   flex-direction: column; 
   gap: 2px;
+  margin-top: 2px;
 }
+
 .cardSectionIdPill {
   background: #ebf8ff; 
   color: #2b6cb0; 
@@ -252,32 +328,46 @@
   font-weight: 700; 
   margin-right: 6px;
 }
+
+.cardSectionIdPillEnrolled {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
 .cardMeetingScheduleDateTimeString {
   font-size: 11px; 
   color: #4a5568;
 }
+
 .cardLocationCampusRoomString {
   font-size: 11px; 
   color: #718096;
 }
+
 .cardInstructorFieldText {
-  font-size: 16px; 
-  color: #666; 
+  font-size: 12px; 
+  color: #4a5568; 
   font-style: italic; 
-  margin-top: 4px;
+  margin-top: 1px;
   border-top: 1px solid #edf2f7; 
   padding-top: 2px;
 }
 
-/* Right Side column panel container dimensions - Stretched to 70% width layout */
+/* Right Side Column Panel Container */
 .calendarLayoutColumn {
-  flex: 0 0 70%; 
+  flex: 0 0 68%; 
   display: flex; 
   flex-direction: column; 
   padding: 20px; 
   box-sizing: border-box; 
   overflow: hidden;
 }
+
 .calendarPreviewTitleLabel {
   margin-bottom: 10px; 
   font-weight: 700; 
@@ -286,6 +376,7 @@
   text-transform: uppercase; 
   letter-spacing: 0.5px;
 }
+
 .calendarScrollCanvasContainer {
   flex: 1; 
   overflow-y: auto; 
@@ -295,61 +386,235 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
 
-/* Timeline Layout Grid components */
+/* Grid Matrix Layout */
 .grid { 
   display: flex; 
   min-height: 900px; 
   width: 100%; 
   background: #fff;
-  border: 1px solid #eef0eb;
-  border-radius: 8px;
   box-sizing: border-box;
 }
 
-/* Time Gutter styling cells tracking columns */
-.gutter { width:54px; flex-shrink:0; display:flex; flex-direction:column; background: #fbfbfa; border-right: 1px solid #eef0eb; }
-.gutterTop { height:36px; flex-shrink:0; border-bottom: 1px solid #ddd; }
+.gutter { 
+  width: 54px; 
+  flex-shrink: 0; 
+  display: flex; 
+  flex-direction: column; 
+  background: #fbfbfa; 
+  border-right: 1px solid #eef0eb; 
+}
+
+.gutterTop { 
+  height: 36px; 
+  flex-shrink: 0; 
+  border-bottom: 1px solid #ddd; 
+}
 
 .gutterCell {
-  height: calc(900px / 13); 
-  display:flex;
+  height: calc(100% / 14); 
+  display: flex;
   align-items: center; 
   justify-content: flex-end;
   box-sizing: border-box;
 }
+
 .timeText {
-  font-size:14px; color:#888; font-weight: 600;
+  font-size: 14px; 
+  color: #888; 
+  font-weight: 600;
   padding-right: 8px;
 }
 
-/* Day Column layouts */
-.dayCol { flex:1; display:flex; flex-direction:column; border-left:1px solid #eef0eb; min-width:0; }
+.dayCol { 
+  flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  border-left: 1px solid #eef0eb; 
+  min-width: 0; 
+}
+
 .dayHd {
-  height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
-  font-size:16px; letter-spacing:0.1em; color:#555; font-weight: 700;
-  border-bottom:1px solid #ddd; background:#f7f5f0;
+  height: 36px; 
+  flex-shrink: 0; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  font-size: 16px; 
+  letter-spacing: 0.1em; 
+  color: #555; 
+  font-weight: 700;
+  border-bottom: 1px solid #ddd; 
+  background: #f7f5f0;
   box-sizing: border-box;
 }
-.dayBody { flex:1; position:relative; overflow:hidden; }
 
-.hourRow { position: relative; width: 100%; box-sizing: border-box; }
-.hourLine { position: absolute; top: 0; left: 0; right: 0; border-top:1px solid #eee; pointer-events:none; }
-.halfLine { position:absolute; top: 50%; left:0; right:0; border-top:1.5px dashed #f6f4ee; pointer-events:none; }
-
-/* Visual Course Render calendar cards blocks styles */
-.block {
-  position:absolute; left:4px; right:4px;
-  border:1px solid; border-radius:5px;
-  padding:10px 12px; 
-  overflow:hidden;
-  box-sizing:border-box; z-index:2;
-  transition: box-shadow 0.15s ease;
+.dayBody { 
+  flex: 1; 
+  position: relative; 
+  overflow: hidden; 
 }
-.block:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 
-.blockConflict { border-width:2px !important; box-shadow:0 0 0 1px #fca5a5; }
+.hourRow { 
+  position: relative; 
+  width: 100%; 
+  box-sizing: border-box; 
+}
 
-.bCode { font-size:15px; font-weight: 700; opacity:0.9; letter-spacing:0.04em; white-space:nowrap; }
-.bName { font-size:15px; font-weight:700; line-height:1.3; margin-top:3px; overflow:hidden; text-overflow: ellipsis; }
-.bInst { font-size:13px; font-style: italic; opacity: 0.9; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } 
-.bConflictLabel { font-size:14px; font-weight: 700; margin-top:6px; opacity:0.9; text-transform: uppercase; }
+.hourLine { 
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  right: 0; 
+  border-top: 1px solid #eee; 
+  pointer-events: none; 
+}
+
+.halfLine { 
+  position: absolute; 
+  top: 50%; 
+  left: 0; 
+  right: 0; 
+  border-top: 1.5px dashed #f6f4ee; 
+  pointer-events: none; 
+}
+
+/* Absolute Timing Render Blocks */
+.block {
+  position: absolute; 
+  left: 4px; 
+  right: 4px;
+  border: 1px solid; 
+  border-radius: 5px;
+  padding: 10px 12px; 
+  overflow: hidden;
+  box-sizing: border-box; 
+  z-index: 2;
+  transition: box-shadow 0.15s ease;
+  background-color: var(--block-bg);
+  border-color: var(--block-border);
+  color: var(--block-text);
+}
+
+.block:hover { 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
+}
+
+.blockConflict { 
+  border-width: 2px !important; 
+  box-shadow: 0 0 0 1px #fca5a5; 
+}
+
+.bCode { font-size: 15px; font-weight: 700; opacity: 0.9; letter-spacing: 0.04em; white-space: nowrap; }
+.bName { font-size: 15px; font-weight: 700; line-height: 1.3; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; }
+.bInst { font-size: 13px; font-style: italic; opacity: 0.9; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } 
+.bEnrolledLabel { font-size: 10px; font-weight: 700; margin-top: 4px; color: #64748b; text-transform: uppercase; }
+.bConflictLabel { font-size: 14px; font-weight: 700; margin-top: 6px; opacity: 0.9; text-transform: uppercase; }
+
+/* ────────────────────────────────────────────────────────
+   PHONE RESPONSIVE MINI SPECIFICATIONS (<= 768px Viewports)
+   ──────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .topbar {
+    padding: 10px;
+    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .backBtn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .title {
+    font-size: 18px;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .diagnosticBox {
+    margin-left: 0;
+    font-size: 11px;
+    align-items: center;
+  }
+
+  .topbarActionWrap {
+    margin-left: 0;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  /* Force the layout to stack vertically */
+  .workspaceContainer {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  /* Course selection panel drops above calendar list */
+  .sidebarLayoutColumn {
+    flex: none;
+    width: 100%;
+    border-right: none;
+    border-bottom: 2px solid #cbd5e0;
+    padding: 12px;
+  }
+
+  /* Gantt Chart Panel details layout underneath descriptions */
+  .calendarLayoutColumn {
+    flex: none;
+    width: 100%;
+    padding: 12px;
+  }
+
+  /* Locked Miniature scaling definitions applied to weekly preview grids */
+  .grid {
+    min-height: 480px; /* Compress overall axis depth bounds */
+  }
+
+  .gutterCell {
+    height: calc(100% / 14);
+  }
+
+  .timeText {
+    font-size: 9px;
+    padding-right: 4px;
+  }
+
+  .gutter {
+    width: 38px;
+  }
+
+  .dayHd {
+    height: 24px;
+    font-size: 10px;
+  }
+
+  .gutterTop {
+    height: 24px;
+  }
+
+  /* Shrink block node fonts to safely render inside squeezed mobile slots */
+  .block {
+    padding: 4px 2px;
+  }
+
+  .bCode {
+    font-size: 9px;
+  }
+
+  .bName {
+    font-size: 9px;
+    white-space: nowrap;
+    margin-top: 1px;
+  }
+
+  .bInst, .bEnrolledLabel, .bConflictLabel {
+    display: none; /* Strip inner secondary subtitles to save vertical phone cell bounds */
+  }
+}
