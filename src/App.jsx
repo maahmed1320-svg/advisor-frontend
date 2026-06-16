@@ -29,7 +29,6 @@ export default function App() {
     if (savedId) handleLogin(savedId)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Fetch submitted enrollments from DB + restore cart ────
   const fetchActiveDbSubmissions = useCallback(async (id, freshResultPayload = null) => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/student/${id}/enrollments_raw`)
@@ -37,71 +36,60 @@ export default function App() {
       const data = await res.json()
       const submissions = data.submissions || []
 
-      // Rebuild submittedDbCodes set
       setSubmittedDbCodes(new Set(submissions.map(s => s.course_code)))
 
-      // Use the passed payload if available, otherwise fallback to the current component state
       const targetLookupSource = freshResultPayload || result;
 
-      if (submissions.length > 0) {
-        setCartItems(prev => {
-          const existingCodes = new Set(prev.map(i => i.code))
+      setCartItems(prev => {
+        const activeDrafts = prev.filter(item => !item.fromDb)
+        
+        const restored = submissions.map(s => {
+          const masterCourse = targetLookupSource?.recommendations?.find(c => c.code === s.course_code) ||
+                               targetLookupSource?.All_courses?.find(c => c.code === s.course_code);
+
+          const matchedSections = masterCourse?.sections?.filter(
+            sec => String(sec.class_nbr) === String(s.class_nbr)
+          ) || [];
+
+          const primarySec = matchedSections[0] || {};
           
-          const restored = submissions
-            .filter(s => !existingCodes.has(s.course_code))
-            .map(s => {
-              // 1. Look up the full master course details from the academic result mapping
-              const masterCourse = targetLookupSource?.recommendations?.find(c => c.code === s.course_code) ||
-                                   targetLookupSource?.All_courses?.find(c => c.code === s.course_code);
+          const instructorName = primarySec 
+            ? `${primarySec.first_name ?? ''} ${primarySec.last_name ?? ''}`.trim() 
+            : (s.instructor ?? 'TBA');
 
-              // 2. Extract and filter all rows matching the chosen registration number
-              const matchedSections = masterCourse?.sections?.filter(
-                sec => String(sec.class_nbr) === String(s.class_nbr)
-              ) || [];
-
-              const primarySec = matchedSections[0] || {};
-              
-              const instructorName = primarySec 
-                ? `${primarySec.first_name ?? ''} ${primarySec.last_name ?? ''}`.trim() 
-                : (s.instructor ?? 'TBA');
-
-              // 3. Construct a standard object structure with your critical fromDb flag
-              return {
-                code:       s.course_code,
-                name:       masterCourse?.name ?? s.name ?? s.course_code,
-                credits:    masterCourse?.credits ?? primarySec?.max_units ?? s.credits ?? 0,
-                instructor: instructorName || 'TBA',
-                room:       primarySec?.room ?? s.room ?? 'TBA',
-                fromDb:     true, // 💡 CRITICAL ATTRIBUTE: Distinguishes DB records from client session drafts
-                section: {
-                  class_nbr:   String(s.class_nbr),
-                  section:     primarySec?.section ?? s.section ?? null,
-                  session:     primarySec?.session ?? s.session ?? 'FAL',
-                  campus:      primarySec?.campus ?? s.campus ?? 'AD',
-                  room:        primarySec?.room ?? s.room ?? 'TBA',
-                  mtg_start:   primarySec?.mtg_start ?? s.mtg_start ?? null,
-                  mtg_end:     primarySec?.mtg_end ?? s.mtg_end ?? null,
-                  Mon:         primarySec?.Mon ?? false,
-                  Tues:        primarySec?.Tues ?? false,
-                  Wed:         primarySec?.Wed ?? false,
-                  Thurs:       primarySec?.Thurs ?? false,
-                  Fri:         primarySec?.Fri ?? false,
-                  // Fallback array to avoid crashing if master course list is unpopulated
-                  subSections: matchedSections.length > 0 ? matchedSections : [{
-                    section:   s.section ?? null,
-                    session:   s.session ?? 'FAL',
-                    campus:    s.campus ?? 'AD',
-                    room:      s.room ?? 'TBA',
-                    mtg_start: s.mtg_start ?? null,
-                    mtg_end:   s.mtg_end ?? null,
-                    class_nbr: s.class_nbr ?? null,
-                  }]
-                }
-              }
-            })
-          return [...prev, ...restored]
+          return {
+            code:       s.course_code,
+            name:       masterCourse?.name ?? s.course_code,
+            credits:    masterCourse?.credits ?? primarySec?.max_units ?? 0,
+            instructor: instructorName || 'TBA',
+            room:       primarySec?.room ?? 'TBA',
+            fromDb:     true, 
+            section: {
+              class_nbr:   String(s.class_nbr),
+              section:     primarySec?.section ?? null,
+              session:     primarySec?.session ?? s.session ?? 'FAL',
+              campus:      primarySec?.campus ?? 'AD',
+              room:        primarySec?.room ?? 'TBA',
+              mtg_start:   primarySec?.mtg_start ?? null,
+              mtg_end:     primarySec?.mtg_end ?? null,
+              Mon:         primarySec?.Mon ?? false,
+              Tues:        primarySec?.Tues ?? false,
+              Wed:         primarySec?.Wed ?? false,
+              Thurs:       primarySec?.Thurs ?? false,
+              Fri:         primarySec?.Fri ?? false,
+              subSections: matchedSections.length > 0 ? matchedSections : [{
+                session:   s.session ?? 'FAL',
+                class_nbr: s.class_nbr ?? null,
+              }]
+            }
+          }
         })
-      }
+
+        const enrolledCodes = new Set(restored.map(r => r.code))
+        const cleanDrafts = activeDrafts.filter(d => !enrolledCodes.has(d.code))
+
+        return [...cleanDrafts, ...restored]
+      })
     } catch (err) {
       console.error('Failed syncing active cart table state mappings:', err)
     }
@@ -110,18 +98,18 @@ export default function App() {
   async function loadStudent(id) {
     const payload = await fetchStudent(id)
     setResult(payload.result)
-    return payload.result; // 💡 RETURN DIRECTLY: Hands payload forward to prevent async lag delays
+    return payload.result;
   }
 
   async function handleLogin(id) {
     setLoading(true); setError(null)
     try {
-      const freshResult = await loadStudent(id) // Capture payload
+      const freshResult = await loadStudent(id) 
       setStudentId(id)
       setPassFailCourses({})
       localStorage.setItem('studentId', id)
       setCartItems([]) 
-      await fetchActiveDbSubmissions(id, freshResult) // Pass directly into lookup parameters
+      await fetchActiveDbSubmissions(id, freshResult)
     } catch (e) {
       setError(e.message === 'Student not found' ? 'Student ID not found.' : `Error: ${e.message}`)
     } finally { setLoading(false) }
@@ -176,7 +164,7 @@ export default function App() {
         const hasConflict = prev.some(item => {
           const existingMeetings = item.section?.subSections || [item.section].filter(Boolean)
           return existingMeetings.some(exSub => {
-            if (!exSub?.mtg_start || !exSub?.mtg_end) return false
+            if (!exSub?.mtg_start || !exSub?.exSub?.mtg_end) return false
             return incomingMeetings.some(inSub => {
               if (!inSub?.mtg_start || !inSub?.mtg_end) return false
               const inSession = (inSub.session || '').toUpperCase()
@@ -208,7 +196,7 @@ export default function App() {
         credits:    newCourseCredits,
         room:       primarySec?.room ?? 'TBA',
         instructor: instructorName || 'TBA',
-        fromDb:     false, // Added natively via client UI selection session
+        fromDb:     false, 
         section,
       }]
     })
@@ -237,10 +225,10 @@ export default function App() {
   if (showChains) {
     return (
       <div className={s.shell}>
-        <header className={s.topbar} style={{ padding: '20px 32px', minHeight: 72, gap: 24 }}>
-          <div className={s.brand}>Prerequisite Chains (study plan)</div>
+        <header className={s.topbar}>
+          <div className={s.brand}>Prerequisite Chains</div>
           <div className={s.studentName}>{student.name} — {student.major} - {student.cgpa}</div>
-          <div style={{ marginLeft: 'auto' }} />
+          <div className={s.spacer} />
           <div className={s.viewToggleRadioGroup}>
             <label className={`${s.radioLabelOption} ${!showChains ? s.radioOptionActive : ''}`}>
               <input type="radio" name="viewToggleChains" className={s.hiddenRadioInput}
@@ -273,17 +261,15 @@ export default function App() {
       <CartPage
         cartItems={cartItems}
         onRemove={code => handleToggleCart(code)}
-        onBack={() => {
-          setShowCartPage(false)
-          if (studentId) fetchActiveDbSubmissions(studentId)
-        }}
+        onBack={() => setShowCartPage(false)}
+        onRefreshSubmissions={fetchActiveDbSubmissions}
       />
     )
   }
 
   return (
     <div className={s.shell}>
-      <header className={s.topbar} style={{ padding: '20px 32px', minHeight: 72, gap: 24 }}>
+      <header className={s.topbar}>
         <div className={s.brand}>Auto Academic Advisor</div>
         <div className={s.studentName}>{student.name}</div>
 
@@ -301,9 +287,8 @@ export default function App() {
         </div>
 
         <button
-          className={`${s.cartBtn} ${cartItems.length > 0 ? s.cartBtnActive : ''}`}
+          className={`${s.cartBtn} ${cartItems.length > 0 ? s.cartBtnActive : ''} ${s.spacer}`}
           onClick={() => setShowCartPage(true)}
-          style={{ marginLeft: 'auto' }}
         >
           🛒 {cartItems.length > 0 && <span className={s.cartBadge}>{cartItems.length}</span>}
         </button>
@@ -327,26 +312,25 @@ export default function App() {
         ))}
       </div>
 
-      {student.cgpa < 2 && (
+      {student.cgpa < 2.3 && (
         <div className={s.gpaAlertBanner}>
           <div onClick={() => setGpaPanelOpen(prev => !prev)} className={s.gpaAlertHeader}>
             <span className={s.gpaAlertTitle}>
-              Academic Advisory Notice: CGPA is below 2 ({student.cgpa?.toFixed(2)})
+              Academic Advisory Notice: CGPA is below 2.3 ({student.cgpa?.toFixed(2)})
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#c53030', background: '#f7fafc',
-                padding: '2px 8px', borderRadius: 12, border: '1px solid #cbd5e0' }}>
+            <div className={s.gpaAlertHeaderRight}>
+              <span className={s.gpaTargetBadge}>
                 {repeatableGpaTargets.length} Course Targets Found
               </span>
-              <strong style={{ color: '#9b2c2c', fontSize: 14 }}>
+              <strong className={s.gpaToggleText}>
                 {gpaPanelOpen ? '▲ Hide Plan' : '▼ View Repeatable Options'}
               </strong>
             </div>
           </div>
 
           {gpaPanelOpen && (
-            <div style={{ padding: 20, background: '#fff', borderTop: '1px solid #edf2f7' }}>
-              <p style={{ margin: '0 0 16px', fontSize: 14, color: '#4a5568', lineHeight: 1.5 }}>
+            <div className={s.gpaPanelContent}>
+              <p className={s.gpaPanelText}>
                 Your GPA is currently under <strong>2</strong>. It is highly recommended to repeat
                 courses where you earned a <strong>C+ grade or lower</strong>. Repeating these classes
                 allows you to override older grades, quickly boosting your overall CGPA.
@@ -356,27 +340,24 @@ export default function App() {
                   No recorded courses match C or lower criteria.
                 </div>
               ) : (
-                <div style={{ overflowX: 'auto', border: '1px solid #edf2f7', borderRadius: 6 }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, textAlign: 'left' }}>
+                <div className={s.gpaTableContainer}>
+                  <table className={s.gpaTable}>
                     <thead>
-                      <tr style={{ background: '#f7fafc', borderBottom: '2px solid #e2e8f0' }}>
+                      <tr>
                         {['Course Code','Course Name','Earned Grade','Term Passed'].map(h => (
-                          <th key={h} style={{ padding: '10px 14px', fontWeight: 700, color: '#4a5568',
-                            textAlign: h === 'Earned Grade' ? 'center' : 'left' }}>{h}</th>
+                          <th key={h} className={h === 'Earned Grade' ? s.gpaTableThCenter : s.gpaTableTh}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {repeatableGpaTargets.map((c, idx) => (
-                        <tr key={c.code + idx}
-                          style={{ borderBottom: '1px solid #edf2f7', background: idx % 2 === 0 ? '#fff' : '#fffafd' }}>
-                          <td style={{ padding: '10px 14px', fontWeight: 700, color: '#b7791f', fontFamily: 'monospace' }}>{c.code}</td>
-                          <td style={{ padding: '10px 14px', color: '#2d3748' }}>{c.name || '—'}</td>
-                          <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                            <span style={{ fontWeight: 800, color: '#c53030', background: '#fee2e2',
-                              padding: '2px 8px', borderRadius: 4, fontSize: 12 }}>{c.grade}</span>
+                        <tr key={c.code + idx} className={idx % 2 === 0 ? s.gpaTableRowEven : s.gpaTableRowOdd}>
+                          <td className={s.gpaTableCellCode}>{c.code}</td>
+                          <td className={s.gpaTableCellName}>{c.name || '—'}</td>
+                          <td className={s.gpaTableCellGrade}>
+                            <span className={s.gpaGradeBadge}>{c.grade}</span>
                           </td>
-                          <td style={{ padding: '10px 14px', color: '#718096' }}>{c.term || '—'}</td>
+                          <td className={s.gpaTableCellTerm}>{c.term || '—'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -388,10 +369,10 @@ export default function App() {
         </div>
       )}
 
-      <div className={s.cols} style={{ gridTemplateColumns: '1.5fr 3.5fr' }}>
-        <div className={s.sideCol} style={{ width: '100%' }}>
+      <div className={s.cols}>
+        <div className={s.sideCol}>
           <section className={s.section}>
-            <div className={s.colHd} style={{ cursor: 'pointer' }} onClick={() => setCurrentOpen(o => !o)}>
+            <div className={s.colHd} onClick={() => setCurrentOpen(o => !o)}>
               Current Sem: — Spring 2026
               <span className={s.hdCount}>{currentOpen ? '▲' : '▼'}</span>
             </div>

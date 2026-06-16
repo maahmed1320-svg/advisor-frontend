@@ -1,254 +1,59 @@
-.shell { display: flex; flex-direction: column; min-height: 100vh; }
+.shell { 
+  display: flex; 
+  flex-direction: column; 
+  min-height: 100vh; 
+}
 
-/* ── Topbar ── */
+/* Topbar Master Layout Configuration */
 .topbar {
   display: flex;
   align-items: center;
   background: #1e1e1e; 
   border-bottom: 1px solid #333; 
-  height: 56px; /* 💡 Increased from 44px to fit larger text cleanly */
+  padding: 12px 24px;
+  min-height: 64px;
+  gap: 16px;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .brand {
-  font-size: 19px; /* 💡 Increased from 16px */
-  letter-spacing: 0.2em;
+  font-size: 18px; 
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #ffffff; 
-  padding: 0 1.2rem;
+  padding-right: 16px;
   border-right: 1px solid #333;
-  height: 100%;
   display: flex;
   align-items: center;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .studentName {
-  font-size: 19px; /* 💡 Increased from 16px */
+  font-size: 16px; 
   font-style: italic;
   color: #e5e5e5; 
-  padding: 0 1.2rem;
-  flex: 1;
-}
-
-.majorPill {
-  font-size: 18px; /* 💡 Increased from 16px */
-  color: #aaa;
-  padding: 0 1.2rem;
-  border-left: 1px solid #333;
-  border-right: 1px solid #333;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  letter-spacing: 0.04em;
-}
-
-/* Semester toggle */
-.semToggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 1.2rem;
-  border-right: 1px solid #333;
-  height: 100%;
-}
-
-.semLabel {
-  font-size: 18px; /* 💡 Increased from 16px */
-  color: #aaa;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  padding-left: 8px;
   white-space: nowrap;
-}
-
-.semBtns {
-  display: flex;
-  border: 1px solid #444;
-  border-radius: 99px;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.semBtn {
-  font-size: 18px; /* 💡 Increased from 16px */
-  padding: 4px 14px;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  color: #bbb;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.semBtn:hover { background: #2a2a2a; color: #fff; }
-.semActive {
-  background: #ffffff !important;
-  color: #111111 !important;
+.spacer {
+  margin-left: auto;
 }
 
-/* Sign out button */
-.logoutBtn {
-  font-size: 18px; /* 💡 Increased from 16px */
-  color: #aaa; 
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  padding: 0 1.2rem;
-  height: 100%;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-}
-.logoutBtn:hover { 
-  color: #ffffff; 
-  background: #2a2a2a; 
-}
-
-/* ── Stats ── */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(4,1fr);
-  border-bottom: 0.5px solid var(--gray-200);
-  flex-shrink: 0;
-}
-
-.stat {
-  padding: 0.8rem 1.1rem;
-  border-right: 0.5px solid var(--gray-200);
-}
-.stat:last-child { border-right: none; }
-
-.statLabel { font-size: 15px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-400); margin-bottom: 3px; }
-.statVal   { font-size: 22px; font-weight: normal; line-height: 1; }
-.statSub   { font-size: 16px; color: var(--gray-400); margin-top: 2px; }
-
-/* ── Cascade warning ── */
-.cascadeWarn {
-  font-size: 17px;
-  color: var(--red);
-  background: var(--red-bg);
-  border-bottom: 0.5px solid var(--red-border);
-  padding: 7px 1.1rem;
-  flex-shrink: 0;
-}
-
-/* ── 2-col layout ── */
-.cols {
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  grid-template-rows: 1fr;
-  flex: 1;
-  min-height: 0;
-}
-
-.sideCol {
-  border-right: 0.5px solid var(--gray-200);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  width: 220px;
-}
-
-.mainCol {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  flex: 1;
-}
-
-.section {
-  display: flex;
-  flex-direction: column;
-  border-bottom: 0.5px solid var(--gray-200);
-}
-.section:last-child { border-bottom: none; flex: 1; }
-
-.colHd {
-  font-size: 15px;
-  letter-spacing: 0.6em;
-  text-transform: uppercase;
-  color: var(--gray-400);
-  padding: 0.8rem 1.1rem;
-  border-bottom: 0.5px solid var(--gray-200);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-}
-
-.hdCount { font-size: 15px; color: var(--gray-300); }
-.colBody { padding: 0.85rem 1.1rem; display: flex; flex-direction: column; }
-
-.scrollable {
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
-}
-
-/* ── Calendar toggle button ── */
-.calToggleBtn {
-  font-size: 15px;
-  padding: 3px 8px;
-  border: 0.5px solid var(--gray-300);
-  border-radius: 99px;
-  background: transparent;
-  color: var(--gray-500);
-  cursor: pointer;
-  letter-spacing: 0.05em;
-  transition: all 0.15s;
-}
-.calToggleBtn:hover { background: var(--gray-50); }
-.calActive {
-  background: var(--black) !important;
-  color: var(--white) !important;
-  border-color: var(--black) !important;
-}
-
-/* Cart button in header */
-.cartBtn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 19px; /* 💡 Increased from 17px */
-  padding: 5px 16px;
-  border: 0.5px solid var(--gray-300);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--gray-500);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s;
-}
-.cartBtn:hover { background: var(--gray-50); }
-.cartBtnActive {
-  background: var(--black) !important;
-  color: var(--white) !important;
-  border-color: var(--black) !important;
-}
-.cartBadge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--white);
-  color: var(--black);
-  font-size: 15px;
-  font-weight: 700;
-}
-
-/* ── Modern Topbar View Toggle Radio Group ── */
+/* Modern View Toggle Radio Group */
 .viewToggleRadioGroup {
   display: flex;
   background: #2a2a2a;
   padding: 4px;
   border-radius: 6px;
   border: 1px solid #3c3c3c;
-  height: 36px; /* 💡 Increased from 28px to match text scale */
+  height: 36px; 
   align-items: center;
+  box-sizing: border-box;
 }
 
 .radioLabelOption {
@@ -257,7 +62,7 @@
   justify-content: center;
   padding: 0 16px;
   height: 100%;
-  font-size: 16px; /* 💡 Increased from 13px */
+  font-size: 14px; 
   font-weight: 600;
   color: #b3b3b3;
   cursor: pointer;
@@ -271,7 +76,6 @@
   background: #333333;
 }
 
-/* Hidden inputs that handle the state */
 .hiddenRadioInput {
   position: absolute;
   opacity: 0;
@@ -279,32 +83,114 @@
   height: 0;
 }
 
-/* Styled active active radio pill status */
 .radioOptionActive {
   background: #ffffff !important;
   color: #111111 !important;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
-/* ── Chains button in topbar ── */
-.chainsBtn {
-  font-size: 18px; /* 💡 Increased from 16px */
-  color: var(--gray-400);
-  border: none;
-  border-radius: 0;
+/* Interactive Navigation Action Headers */
+.cartBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px; 
+  padding: 6px 16px;
+  border: 0.5px solid #444;
+  border-radius: 6px;
   background: transparent;
-  padding: 0 1.2rem;
-  height: 100%;
-  letter-spacing: 0.04em;
+  color: #fff;
   cursor: pointer;
-  border-left: 0.5px solid var(--gray-200);
   white-space: nowrap;
+  transition: all 0.15s;
 }
-.chainsBtn:hover { color: var(--black); background: var(--gray-50); }
 
-/* ── Academic Advisory Notice Banner Animations ── */
+.cartBtn:hover { 
+  background: #2a2a2a; 
+}
+
+.cartBtnActive {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border-color: #ffffff !important;
+}
+
+.cartBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1a3a6a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.logoutBtn {
+  font-size: 14px; 
+  color: #aaa; 
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: transparent;
+  padding: 6px 14px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+}
+
+.logoutBtn:hover { 
+  color: #ffffff; 
+  background: #c53030;
+  border-color: #c53030;
+}
+
+/* Metric Display Panels */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.stat {
+  padding: 16px;
+  border-right: 1px solid #e2e8f0;
+}
+
+.stat:last-child { 
+  border-right: none; 
+}
+
+.statLabel { 
+  font-size: 12px; 
+  letter-spacing: 0.1em; 
+  text-transform: uppercase; 
+  color: #718096; 
+  margin-bottom: 4px; 
+}
+
+.statVal { 
+  font-size: 20px; 
+  font-weight: 700; 
+  color: #1a202c;
+  line-height: 1.1; 
+}
+
+.statSub { 
+  font-size: 12px; 
+  color: #718096; 
+  margin-top: 4px; 
+}
+
+/* Academic Advisory GPA Warning Layout Engine */
 .gpaAlertBanner {
-  margin: 16px 0;
+  margin: 16px;
   border: 2px solid #cbd5e0;
   border-radius: 8px;
   overflow: hidden;
@@ -319,8 +205,13 @@
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  background: transparent;
   user-select: none;
+}
+
+.gpaAlertHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .gpaAlertTitle {
@@ -329,37 +220,246 @@
   color: #9b2c2c;
 }
 
+.gpaTargetBadge {
+  font-size: 12px;
+  font-weight: 700;
+  color: #c53030;
+  background: #f7fafc;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e0;
+}
+
+.gpaToggleText {
+  color: #9b2c2c;
+  font-size: 14px;
+}
+
+.gpaPanelContent {
+  padding: 20px;
+  background: #fff;
+  border-top: 1px solid #edf2f7;
+}
+
+.gpaPanelText {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #4a5568;
+  line-height: 1.5;
+}
+
+.gpaTableContainer {
+  overflow-x: auto;
+  border: 1px solid #edf2f7;
+  border-radius: 6px;
+}
+
+.gpaTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: left;
+}
+
+.gpaTableTh {
+  padding: 10px 14px;
+  font-weight: 700;
+  color: #4a5568;
+  background: #f7fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.gpaTableThCenter {
+  padding: 10px 14px;
+  font-weight: 700;
+  color: #4a5568;
+  background: #f7fafc;
+  border-bottom: 2px solid #e2e8f0;
+  text-align: center;
+}
+
+.gpaTableRowEven {
+  border-bottom: 1px solid #edf2f7;
+  background: #fff;
+}
+
+.gpaTableRowOdd {
+  border-bottom: 1px solid #edf2f7;
+  background: #fffafd;
+}
+
+.gpaTableCellCode {
+  padding: 10px 14px;
+  font-weight: 700;
+  color: #b7791f;
+  font-family: monospace;
+}
+
+.gpaTableCellName {
+  padding: 10px 14px;
+  color: #2d3748;
+}
+
+.gpaTableCellGrade {
+  padding: 10px 14px;
+  text-align: center;
+}
+
+.gpaGradeBadge {
+  font-weight: 800;
+  color: #c53030;
+  background: #fee2e2;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.gpaTableCellTerm {
+  padding: 10px 14px;
+  color: #718096;
+}
+
+/* Workspace Visual Splits */
+.cols {
+  display: grid;
+  grid-template-columns: 1.5fr 3.5fr;
+  flex: 1;
+  min-height: 0;
+  background: #f8f7f3;
+}
+
+.sideCol {
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
+}
+
+.mainCol {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+}
+
+.colHd {
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #4a5568;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #edf2f7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.hdCount { 
+  font-size: 12px; 
+  color: #4a5568; 
+}
+
+.colBody { 
+  padding: 12px; 
+  display: flex; 
+  flex-direction: column; 
+}
+
 @keyframes blinkGpa {
-  0%, 49% {
-    background-color: #fee2e2;
-    border-color: #e53e3e;
-  }
-  50%, 100% {
-    background-color: #ffffff;
-    border-color: #cbd5e0;
-  }
+  0%, 49% { background-color: #fee2e2; border-color: #e53e3e; }
+  50%, 100% { background-color: #ffffff; border-color: #cbd5e0; }
 }
 
-/* ── Mobile responsive ── */
-.hideOnMobile { display: block; }
-
+/* ────────────────────────────────────────────────────────
+   PHONE VIEWPORT ADAPTATIONS (<= 768px Screens)
+   ──────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .hideOnMobile { display: none; }
-  .topbar { padding: 6px 10px; gap: 6px; flex-wrap: nowrap; height: auto; min-height: 44px; }
-  .brand { font-size: 13px; }
-  .studentName { font-size: 13px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .logoutBtn { font-size: 13px; padding: 4px 8px; }
-  .cartBtn { padding: 4px 10px; font-size: 14px; }
-  .stats { grid-template-columns: repeat(2, 1fr); gap: 0; }
-  .stat { padding: 8px 12px; }
-  .statVal { font-size: 18px; }
-  .cols { grid-template-columns: 1fr !important; }
-  .sideCol { width: 100% !important; max-height: 35vh; overflow-y: auto; }
-}
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    padding: 12px;
+    gap: 12px;
+  }
 
-@media (max-width: 480px) {
-  .stats { grid-template-columns: repeat(2, 1fr); }
-  .statLabel { font-size: 9px; }
-  .statVal   { font-size: 16px; }
-  .statSub   { font-size: 10px; }
+  .brand {
+    border-right: none;
+    padding-right: 0;
+    font-size: 16px;
+    justify-content: center;
+  }
+
+  .studentName {
+    padding-left: 0;
+    font-size: 14px;
+    text-align: center;
+    width: 100%;
+  }
+
+  .viewToggleRadioGroup {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .radioLabelOption {
+    flex: 1;
+    font-size: 13px;
+  }
+
+  .cartBtn {
+    margin-left: 0 !important;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .logoutBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat {
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .stat:nth-child(even) {
+    border-right: none;
+  }
+
+  .gpaAlertHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .gpaAlertHeaderRight {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .cols {
+    grid-template-columns: 1fr !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sideCol {
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
 }
