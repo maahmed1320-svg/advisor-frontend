@@ -186,7 +186,7 @@ export default function CourseBrowser({
       <div style={{ display: 'flex', gap: 20, padding: '6px 14px', background: '#ece9df', borderBottom: '1px solid #d8d5cc', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#555' }}>Session:</span>
-          {[['all','All'], ['SUM','Summer Only'], ['FAL','Fall Only']].map(([val, label]) => (
+          {[['all','All'], ['SUM','Summer'], ['FAL','Fall']].map(([val, label]) => (
             <button key={val}
               style={{ fontSize: 13, padding: '2px 10px', border: '1px solid #ccc', borderRadius: 4,
                 cursor: 'pointer',
@@ -340,10 +340,10 @@ export default function CourseBrowser({
                         }
                       }}
                     >
-                      {inCart            ? '✓ Added'
-                        : missingParentCoReq ? `🔒 Needs ${parentCode}`
-                        : !hasPrereqsMet    ? '🔒 Locked'
-                        : isLimitExceeded   ? '⚠️ Max Credits'
+                      {inCart            ? ' Added'
+                        : missingParentCoReq ? ` Needs ${parentCode}`
+                        : !hasPrereqsMet    ? ' Locked'
+                        : isLimitExceeded   ? ' Max Credits'
                         : '+ Add'}
                     </button>
                   )}
