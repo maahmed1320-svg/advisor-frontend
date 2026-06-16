@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import s from './CourseBrowser.module.css'
 
-// ── Co-requisite pairs matrix added to the frontend ───────────────────
 const COREQS = [
   ['PHY102',  'PHY102L'],
   ['PHY201',  'PHY201L'],
@@ -33,7 +32,7 @@ function formatDaysAndTimes(sec) {
   if (sec.Sat)   days.push('Sat');
   if (sec.Sun)   days.push('Sun');
   if (days.length === 0) return 'TBA';
-  const timeSlot = sec.mtg_start && sec.mtg_end ? ` ${sec.mtg_start} - ${sec.mtg_end}` : '';
+  const timeSlot = sec.mtg_start && sec.mtg_end ? ` ${sec.mtg_start.slice(0, 5)} - ${sec.mtg_end.slice(0, 5)}` : '';
   return days.join(' ') + timeSlot;
 }
 
@@ -103,15 +102,44 @@ export default function CourseBrowser({
         subSections,
         primary: subSections[0] || {}
       }))
+
+      const inCart = (cart || []).some(c => c.code === course.code)
+      const isAlreadySubmitted = submittedDbCodes?.has?.(course.code) ?? false
+      
+      const childPairConfig = COREQS.find(([parent, child]) => child === course.code);
+      const parentCode = childPairConfig ? childPairConfig[0] : null;
+      const isParentInCart = parentCode ? (cart || []).some(c => c.code === parentCode) : false;
+      
+      const missingParentCoReq = !!parentCode && !isAlreadySubmitted && !inCart && !isParentInCart;
+      const nativePrereqsMet = filter === 'allful' ? true : course.prereqsMet !== false;
+
+      let hasPrereqsMet = nativePrereqsMet;
+      if (isParentInCart) {
+        const otherMissing = (course.missingPrereqs || []).filter(p => p !== parentCode && !p.startsWith('Required:'));
+        if (otherMissing.length === 0) {
+          hasPrereqsMet = true; 
+        }
+      } else if (missingParentCoReq) {
+        hasPrereqsMet = false;
+      }
+
+      course.missingParentCoReq = missingParentCoReq;
+      course.computedPrereqsMet = hasPrereqsMet;
+      course.parentCode = parentCode;
     })
 
     const freshList = copied.filter(r => {
       const isCurrentlyBlocked = blockedSet.includes(r.code)
       if ((r.displayGroups || []).length === 0) return false
+      
       if (filter !== 'allful') {
-        if (filter === 'available' && (!r.prereqsMet || isCurrentlyBlocked)) return false
-        if (filter === 'blocked'   && !isCurrentlyBlocked) return false
+        if (filter === 'available') {
+          const canEnroll = (r.computedPrereqsMet || r.missingParentCoReq) && !isCurrentlyBlocked;
+          if (!canEnroll) return false;
+        }
+        if (filter === 'blocked' && !isCurrentlyBlocked) return false
       }
+      
       if (search) {
         const q = search.toLowerCase()
         if (!r.code?.toLowerCase().includes(q) && !r.name?.toLowerCase().includes(q)) return false
@@ -120,7 +148,7 @@ export default function CourseBrowser({
     })
 
     setVisibleCourses(freshList)
-  }, [recommendations, All_courses, filter, search, termFilter, campusFilter, blockedSet])
+  }, [recommendations, All_courses, filter, search, termFilter, campusFilter, blockedSet, cart, submittedDbCodes])
 
   function handleAdd(r) {
     if (submittedDbCodes?.has?.(r.code)) return
@@ -160,7 +188,7 @@ export default function CourseBrowser({
         <div className={s.topRight}>
           <input
             className={s.search}
-            placeholder="Search code or name…"
+            placeholder="Search code or name..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -183,27 +211,21 @@ export default function CourseBrowser({
       </div>
 
       {/* ── Session / Campus filter bar ──────────────────────── */}
-      <div style={{ display: 'flex', gap: 20, padding: '6px 14px', background: '#ece9df', borderBottom: '1px solid #d8d5cc', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#555' }}>Session:</span>
+      <div className={s.subFilterBar}>
+        <div className={s.subFilterGroup}>
+          <span className={s.subFilterLabel}>Session:</span>
           {[['all','All'], ['SUM','Summer'], ['FAL','Fall']].map(([val, label]) => (
             <button key={val}
-              style={{ fontSize: 13, padding: '2px 10px', border: '1px solid #ccc', borderRadius: 4,
-                cursor: 'pointer',
-                background: termFilter === val ? '#1a3a6a' : '#fff',
-                color:       termFilter === val ? '#fff'    : '#555' }}
+              className={`${s.subFilterBtn} ${termFilter === val ? s.subFilterBtnActive : ''}`}
               onClick={() => setTermFilter(val)}
             >{label}</button>
           ))}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#555' }}>Campus:</span>
+        <div className={s.subFilterGroup}>
+          <span className={s.subFilterLabel}>Campus:</span>
           {[['all','All'], ['AD','AD Campus'], ['AA','AA Campus']].map(([val, label]) => (
             <button key={val}
-              style={{ fontSize: 13, padding: '2px 10px', border: '1px solid #ccc', borderRadius: 4,
-                cursor: 'pointer',
-                background: campusFilter === val ? '#1a3a6a' : '#fff',
-                color:       campusFilter === val ? '#fff'    : '#555' }}
+              className={`${s.subFilterBtn} ${campusFilter === val ? s.subFilterBtnActive : ''}`}
               onClick={() => setCampusFilter(val)}
             >{label}</button>
           ))}
@@ -223,26 +245,9 @@ export default function CourseBrowser({
           const currentSelection  = selected[r.code] ?? cartItemForCourse?.section?.class_nbr
           const displayCredits    = r.credits ?? displayGroups[0]?.primary?.max_units ?? 0
 
-          // ── Co-requisite Parent-Child Tracking Engine ──────────────────
-          const childPairConfig = COREQS.find(([parent, child]) => child === r.code);
-          const parentCode = childPairConfig ? childPairConfig[0] : null;
-          const isParentInCart = parentCode ? (cart || []).some(c => c.code === parentCode) : false;
-          
-          // Flag indicating that the module is a child lab missing its parent lecture module in the registration cart
-          const missingParentCoReq = !!parentCode && !isAlreadySubmitted && !inCart && !isParentInCart;
-
-          const nativePrereqsMet   = filter === 'allful' ? true : r.prereqsMet !== false
-          
-          // 💡 FIXED REAL-TIME EVALUATION: If the parent lecture is in the cart, ignore the strict backend prerequisite flag
-          let hasPrereqsMet = nativePrereqsMet;
-          if (isParentInCart) {
-            const otherMissing = (r.missingPrereqs || []).filter(p => p !== parentCode && !p.startsWith('Required:'));
-            if (otherMissing.length === 0) {
-              hasPrereqsMet = true; // Unlocks the +Add button instantly!
-            }
-          } else if (missingParentCoReq) {
-            hasPrereqsMet = false;
-          }
+          const missingParentCoReq = r.missingParentCoReq;
+          const hasPrereqsMet     = r.computedPrereqsMet;
+          const parentCode        = r.parentCode;
 
           const courseCredits     = r.credits ?? displayGroups[0]?.primary?.max_units ?? 0
           const isLimitExceeded   = !inCart && (totalCartCredits + courseCredits > 20)
@@ -254,20 +259,14 @@ export default function CourseBrowser({
                 ${blocked           ? s.cardBlocked : ''}
                 ${inCart            ? s.cardInCart  : ''}
                 ${!hasPrereqsMet && !blocked && !missingParentCoReq ? s.cardLocked : ''}
+                ${missingParentCoReq && !blocked ? s.cardMissingParent : ''}
+                ${isAlreadySubmitted ? s.cardSubmitted : ''}
               `}
-              style={
-                isAlreadySubmitted 
-                  ? { borderLeft: '3px solid #6b46c1', background: '#faf5ff', opacity: 0.55 }
-                  : (missingParentCoReq && !blocked)
-                    ? { borderLeft: '4px solid #d97706', background: '#fffbeb', borderTop: '1px solid #fcd34d', borderRight: '1px solid #fcd34d', borderBottom: '1px solid #fcd34d' }
-                    : {}
-              }
             >
 
               {/* ── Header row ──────────────────────────────── */}
               <div
-                className={`${s.hdr} ${isOpen ? s.hdrOpen : ''}`}
-                style={{ cursor: isAlreadySubmitted ? 'default' : undefined }}
+                className={`${s.hdr} ${isOpen ? s.hdrOpen : ''} ${isAlreadySubmitted ? s.hdrSubmitted : ''}`}
                 onClick={() => !blocked && displayGroups.length > 0 && toggle(r.code)}
               >
                 <span className={s.tri}>
@@ -277,35 +276,25 @@ export default function CourseBrowser({
                 <span className={s.hSep}> – </span>
                 <span className={s.hName}>{r.name}</span>
 
-                {/* ── Real-time Alert Note Banner ──────────────── */}
                 {missingParentCoReq && !blocked && (
-                  <span style={{
-                    marginLeft: 12, fontSize: 11, color: '#b45309', fontWeight: 700,
-                    background: '#fef3c7', padding: '3px 8px', borderRadius: 4, border: '1px solid #f59e0b'
-                  }}>
-                    ⚠️ You must take {parentCode} with this course. Add {parentCode} to cart first.
-                  </span>
-                )}
-
-                {(r.downstreamUnlocks || 0) > 0 && (
-                  <span className={s.unlockScore} title={`Unlocks ${r.downstreamUnlocks} future courses`}>
-                    {r.downstreamUnlocks} pts
-                  </span>
+                  <div className={s.alertBanner}>
+                    Warning: You must take {parentCode} with this course. Add {parentCode} to cart first.
+                  </div>
                 )}
 
                 <div className={s.hRight}>
+                  {(r.downstreamUnlocks || 0) > 0 && (
+                    <span className={s.unlockScore} title={`Unlocks ${r.downstreamUnlocks} future courses`}>
+                      {r.downstreamUnlocks} pts
+                    </span>
+                  )}
+
                   {blocked && (
                     <span className={`${s.badge} ${s.badgeBlocked}`}>blocked</span>
                   )}
                   
                   {isAlreadySubmitted && (
-                    <span style={{
-                      fontSize: 11, fontWeight: 700, color: '#6b46c1',
-                      background: '#f3e8ff', border: '1px solid #e9d5ff',
-                      padding: '2px 8px', borderRadius: 4, marginRight: 6,
-                    }}>
-                      🔒 Already Enrolled
-                    </span>
+                    <span className={s.badgeSubmitted}>Already Enrolled</span>
                   )}
 
                   <span className={s.cr}>{displayCredits} cr</span>
@@ -340,10 +329,10 @@ export default function CourseBrowser({
                         }
                       }}
                     >
-                      {inCart            ? ' Added'
-                        : missingParentCoReq ? ` Needs ${parentCode}`
-                        : !hasPrereqsMet    ? ' Locked'
-                        : isLimitExceeded   ? ' Max Credits'
+                      {inCart            ? 'Added'
+                        : missingParentCoReq ? `Needs ${parentCode}`
+                        : !hasPrereqsMet    ? 'Locked'
+                        : isLimitExceeded   ? 'Max Credits'
                         : '+ Add'}
                     </button>
                   )}
@@ -352,7 +341,7 @@ export default function CourseBrowser({
 
               {/* ── Sections table ──────────────────────────── */}
               {isOpen && displayGroups.length > 0 && (
-                <div className={s.secWrap} style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10 }}>
+                <div className={s.secWrap}>
                   <div className={s.colHdr}>
                     <span className={s.cSel}></span>
                     <span className={s.cClass}>Class Nbr</span>
@@ -369,70 +358,72 @@ export default function CourseBrowser({
                     const isSelected = String(currentSelection) === String(group.class_nbr) ||
                       (currentSelection === undefined && displayGroups[0].class_nbr === group.class_nbr)
 
+                    // Compute dynamic section block wrapper state mapping
+                    const secBlockClass = isAlreadySubmitted
+                      ? (isSelected ? s.secBlockSubmittedSelected : s.secBlockSubmitted)
+                      : (isSelected ? `${s.secBlock} ${s.secSelected}` : s.secBlock);
+
                     return (
                       <div
                         key={`${r.code}-${group.class_nbr}`}
-                        className={`${s.secBlock} ${isSelected ? s.secSelected : ''}`}
-                        style={{
-                          border:       isSelected ? (isAlreadySubmitted ? '2px solid #6b46c1' : '2px solid #1a3a6a') : '1px solid #e2e8f0',
-                          borderRadius: 6,
-                          background:   isAlreadySubmitted
-                            ? (isSelected ? '#e9d5ff' : '#f3e8ff')
-                            : (isSelected ? '#f7fafc'  : '#fff'),
-                          cursor:        isAlreadySubmitted ? 'not-allowed' : 'pointer',
-                          opacity:       isAlreadySubmitted ? 0.75 : 1,
-                          pointerEvents: isAlreadySubmitted ? 'none' : 'auto',
-                          padding:       4,
-                        }}
+                        className={secBlockClass}
                         onClick={() => {
                           if (isAlreadySubmitted) return
                           setSelected(prev => ({ ...prev, [r.code]: group.class_nbr }))
                         }}
                       >
                         {group.subSections.map((subSec, sIdx) => (
-                          <div key={`${group.class_nbr}-${sIdx}`} className={s.secRow}
-                            style={{
-                              borderBottom: sIdx < group.subSections.length - 1 ? '1px dashed #edf2f7' : 'none',
-                              padding: '6px 0',
-                            }}
+                          <div 
+                            key={`${group.class_nbr}-${sIdx}`} 
+                            className={`${s.secRow} ${sIdx < group.subSections.length - 1 ? s.secRowNotLast : ''}`}
                           >
                             <span className={s.cSel}>
                               {sIdx === 0
                                 ? <span className={isSelected ? s.radioOn : s.radioOff} />
-                                : <span style={{ width: 12, display: 'inline-block' }} />}
+                                : <span className={s.radioPlaceholder} />}
                             </span>
 
                             <span className={s.classNum}>
-                              {sIdx === 0
-                                ? <span style={{ fontWeight: 700 }}>{group.class_nbr}</span>
-                                : <span style={{ color: '#aaa', fontSize: 11 }}>↳ cont.</span>}
+                              <span className={s.mobileLabel}>Class Nbr:</span>
+                              {sIdx === 0 ? group.class_nbr : <span className={s.contLabel}>↳ cont.</span>}
                             </span>
 
                             <span className={s.cSec}>
-                              <span className={s.secNum}>ID: {subSec.section}</span><br />
+                              <span className={s.mobileLabel}>Section:</span>
+                              <span className={s.secNum}>ID: {subSec.section}</span>&nbsp;
                               <span className={s.semTag}>{subSec.session || 'Regular'}</span>
                             </span>
 
-                            <span className={s.cCr}>{r.credits ?? subSec.max_units ?? 0} cr</span>
+                            <span className={s.cCr}>
+                              <span className={s.mobileLabel}>Credits:</span>
+                              {r.credits ?? subSec.max_units ?? 0} cr
+                            </span>
 
-                            <span className={s.cDT} style={{ fontWeight: 600, color: '#2d3748' }}>
+                            <span className={s.cDT}>
+                              <span className={s.mobileLabel}>Schedule:</span>
                               {formatDaysAndTimes(subSec)}
                             </span>
 
                             <span className={s.cRoom}>
+                              <span className={s.mobileLabel}>Location:</span>
                               <span className={s.campusName}>{subSec.campus || 'Main'}</span>
-                              {subSec.room && <><br /><span>Rm: {subSec.room}</span></>}
+                              {subSec.room && <span>&nbsp;(Rm: {subSec.room})</span>}
                             </span>
 
                             <span className={s.cInst}>
+                              <span className={s.mobileLabel}>Instructor:</span>
                               {`${subSec.first_name ?? ''} ${subSec.last_name ?? ''}`.trim() || 'TBA'}
                             </span>
 
                             <span className={s.cDates}>
-                              {formatDate(subSec.start_date)} –<br />{formatDate(subSec.end_date)}
+                              <span className={s.mobileLabel}>Dates:</span>
+                              {formatDate(subSec.start_date)} – {formatDate(subSec.end_date)}
                             </span>
 
-                            <span className={s.cStat}><StatusDot /></span>
+                            <span className={s.cStat}>
+                              <span className={s.mobileLabel}>Status:</span>
+                              <StatusDot />
+                            </span>
                           </div>
                         ))}
                       </div>
